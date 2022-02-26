@@ -35,10 +35,9 @@ def get_titles(soup):
 
     title_all_html = soup.find_all('a', class_='JobSearchCard-primary-heading-link')
     titles = []
-    problematic_indexes = []
     for title in title_all_html:
         titles.append(title.text.strip())
-    return [x.split("\n")[0] for x in titles], problematic_indexes
+    return [x.split("\n")[0] for x in titles]
 
 
 def get_days_left(soup):
@@ -169,7 +168,6 @@ def main():
         print(df)
         # TODO mine deeper
         # TODO merge with Shai's code
-        # TODO push sur github
         # TODO write readme.md
         # TODO get requirements file
 
