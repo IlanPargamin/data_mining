@@ -4,7 +4,7 @@ import pandas as pd
 import re
 import time
 
-MAIN_URL = 'https://www.freelancer.com/jobs/'
+MAIN_URL = 'https://www.freelancer.com'
 RESULTS_BY_PAGE = 50
 PAGE_START = 1
 PAGE_STOP = 20
@@ -18,10 +18,10 @@ def get_soup(page):
     :return: soup, the HTML code in the BeautifulSoup format.
     """
     if page == 1:
-        response = requests.get(url=MAIN_URL + f'?results={RESULTS_BY_PAGE}')
+        response = requests.get(url=MAIN_URL + '/jobs' + f'?results={RESULTS_BY_PAGE}')
     else:
         # time.sleep(1)
-        response = requests.get(url=MAIN_URL + f"{str(page)}" + "/" + f'?results={RESULTS_BY_PAGE}')
+        response = requests.get(url=MAIN_URL + '/jobs' + f"{str(page)}" + "/" + f'?results={RESULTS_BY_PAGE}')
     return BeautifulSoup(response.content, 'html.parser')
 
 
@@ -112,6 +112,16 @@ def get_bids(soup, prob_indexes):
     return [x.split("\n")[0] for x in bids]
 
 
+def get_links(soup):
+    """
+    Returns a list of the links of all the job offers.
+    :param soup
+    :return:
+    """
+    return [MAIN_URL + x['href'] for x in list(soup.find_all('a', href=True, class_="JobSearchCard-primary-heading-link"))]
+
+
+
 def build_dataframe(titles, days_left, desc, tags, bids):
     """
     Given the lists we built using the functions get_titles, get_days_left, get_job_desc, get_job_tags and get_bids,
@@ -141,6 +151,9 @@ def printing_options(print_opt=None):
         pd.set_option("display.max_rows", None, "display.max_columns", None)
 
 
+
+
+
 def main():
     """
     Our main function.
@@ -158,6 +171,7 @@ def main():
 
     for page in range(PAGE_START, PAGE_STOP):
         soup = get_soup(page)
+        links = get_links(soup)
         titles = get_titles(soup)
         days_left = get_days_left(soup)
         job_desc, problematic_indexes = get_job_desc(soup)
