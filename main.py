@@ -21,137 +21,81 @@ def get_soup(page):
         response = requests.get(url=MAIN_URL + '/jobs' + f'?results={RESULTS_BY_PAGE}')
     else:
         # time.sleep(1)
-        response = requests.get(url=MAIN_URL + '/jobs' + f"{str(page)}" + "/" + f'?results={RESULTS_BY_PAGE}')
+        response = requests.get(url=MAIN_URL + '/jobs/' + f"{str(page)}" + "/" + f'?results={RESULTS_BY_PAGE}')
     return BeautifulSoup(response.content, 'html.parser')
 
 
-def get_titles(soup):
+def scrape_job_page(soup, titles=True, days_left=True, job_desc=True, tags=True, bids=True, links=True):
     """
-    Given the html code of the website, get_titles returns a list of all the job titles in the specified page of the
-    website.
+    For each parameter, returns a list of scraped data if parameter True
     :param soup
-    :return: a list of all job titles
+    :param titles
+    :param days_left
+    :param job_desc
+    :param tags
+    :param bids
+    :param links
+    :return: out: a dictionary where each True parameter is a key and the associated value is the list of scraped data
     """
+    out = {}
 
-    title_all_html = soup.find_all('a', class_='JobSearchCard-primary-heading-link')
-    titles = []
-    for title in title_all_html:
-        titles.append(title.text.strip())
-    return [x.split("\n")[0] for x in titles]
+    # job titles
+    if titles:
+        out["titles"] = [x.text.strip().split("\n")[0]
+                         for x in list(soup.find_all('a', class_='JobSearchCard-primary-heading-link'))]
+
+    # time remaining in days to make a bid to a specific job offer
+    if days_left:
+        out["days left to bid"] = [x.string for x in
+                            list(soup.find_all('span', attrs={'class': 'JobSearchCard-primary-heading-days'}))]
+
+    # job descriptions
+    # The following lines of code also creates a list of problematic indexes. That refers to job offers that are not
+    # public neither open to bidding.
+    if job_desc or bids:
+        des_all = soup.find_all(class_="JobSearchCard-primary-description")
+        desc_list = []
+        problematic_indexes = []
+        for i in range(RESULTS_BY_PAGE):
+            desc_list.append(des_all[i].text.strip())
+            if 'Please Sign Up or Login to see details.' in des_all[i].text.strip():
+                problematic_indexes.append(i)
+        if job_desc:
+            out["Job description"] = desc_list
+
+    # job tags corresponding to the job offer
+    if tags:
+        out["tags"] = list(map((lambda s: re.sub(r'\n', ', ', s)), [tag.text.strip()
+                                                                    for tag in list(
+                soup.find_all("div", class_="JobSearchCard-primary-tags"))]))
+
+    # average bids
+    # There is no bid if the index is problematic. We append the list with ''
+    if bids:
+        bids_list = []
+        for i in range(RESULTS_BY_PAGE - len(problematic_indexes)):
+            if i in problematic_indexes:
+                bids_list.append('')
+                del problematic_indexes[0]  # we delete the problematic index we treated
+                problematic_indexes = [x - 1 for x in problematic_indexes]  # we move the indexes backward
+            bids_list.append(list(soup.find_all("div", class_="JobSearchCard-primary-price"))[i].text.strip())
+        out["bids"] = [x.split("\n")[0] for x in bids_list]
+
+    # links of the job offer
+    if links:
+        out["links"] = [MAIN_URL + x['href'] for x in
+                        list(soup.find_all('a', href=True, class_="JobSearchCard-primary-heading-link"))]
+
+    return out
 
 
-def get_days_left(soup):
+def build_dataframe(data_dict):
     """
-    returns a list whose elements are the time remaining in days to make a bid to a specific job offer.
-    Ex: "6 days left"
-    :param soup
-    """
-    days_all = soup.find_all('span', attrs={'class': 'JobSearchCard-primary-heading-days'})
-    days_left = []
-    for day in days_all:
-        days_left.append(day.string)
-    return days_left
-
-
-def get_job_desc(soup):
-    """
-    returns a list with all the job descriptions.
-
-    The function also creates a list of problematic indexes : job descriptions indicating "Please Sign Up or Login to
-    see details".
-    It is an indication that the job offer is not public and there is no visible public bid to scrape. We use the list
-    problematic indexes in the get_bid function.
-
-    :param soup
-    :return: the list of the job descriptions, the list of problematic indexes
-    """
-    des_all = soup.find_all(class_="JobSearchCard-primary-description")
-    desc = []
-    problematic_indexes = []
-    for i in range(RESULTS_BY_PAGE):
-        desc.append(des_all[i].text.strip())
-
-        if 'Please Sign Up or Login to see details.' in des_all[i].text.strip():
-            problematic_indexes.append(i)
-    return desc, problematic_indexes
-
-
-def get_job_tags(soup):
-    """
-    Returns a list with all the job tags that correspond to the job offers.
-    Ex: if this is a data science job offer, the tags could be "data science, data mining, python"
-    :param soup
-    :return:
-    """
-    tags_all = soup.find_all("div", class_="JobSearchCard-primary-tags")
-    tags = []
-    for tag in tags_all:
-        tags.append(tag.text.strip())
-    return list(map((lambda s: re.sub(r'\n', ', ', s)), tags))
-
-
-def get_bids(soup, prob_indexes):
-    """
-    Returns a list with all the average bids associated with the job offers.
-    The format depends on the job offer: sometimes it will be a range ('500-1000 USD'), a price per hours ('5 USD per
-    hour') or a fixed price ('5000 USD'). The currency is always USD.
-    As described in the docstring of get_desc, some job offers do not provide a visible average bid. When we reach
-    these problematic indexes, we insert an empty average bid.
-    :param soup
-    :param prob_indexes: the indexes for which there is no average bid to scrape
-    :return: a list of all the average bids in different formats
-    """
-    bid_all = soup.find_all("div", class_="JobSearchCard-primary-price")
-    bids = []
-    for i in range(RESULTS_BY_PAGE - len(prob_indexes)):
-        if i in prob_indexes:
-            bids.append('')
-            del prob_indexes[0]  # we delete the problematic index we treated
-            prob_indexes = [x - 1 for x in prob_indexes]  # we move the indexes backward
-        bids.append(bid_all[i].text.strip())
-    return [x.split("\n")[0] for x in bids]
-
-
-def get_links(soup):
-    """
-    Returns a list of the links of all the job offers.
-    :param soup
-    :return:
-    """
-    return [MAIN_URL + x['href'] for x in list(soup.find_all('a', href=True, class_="JobSearchCard-primary-heading-link"))]
-
-
-
-def build_dataframe(titles, days_left, desc, tags, bids):
-    """
-    Given the lists we built using the functions get_titles, get_days_left, get_job_desc, get_job_tags and get_bids,
+    Given the dictionary of lists we scraped,
     we build a pandas dataframe where each list is a column.
-    :param titles: list of the job titles
-    :param days_left: list of the days left to make a bid
-    :param desc: list of the job descriptions
-    :param tags: list of the job tags
-    :param bids: list of the amounts of the average bids of the job offers
     :return: a pandas dataframe
     """
-    return pd.DataFrame({
-        "titles": titles,
-        "days_left": days_left,
-        "desc": desc,
-        "tags": tags,
-        "bids": bids
-    })
-
-
-def printing_options(print_opt=None):
-    """
-    Sets options for printing the full pandas dataframe.
-    :return:
-    """
-    if print_opt == 'full':
-        pd.set_option("display.max_rows", None, "display.max_columns", None)
-
-
-
+    return pd.DataFrame.from_dict(data_dict)
 
 
 def main():
@@ -167,23 +111,36 @@ def main():
         raise ValueError(f'You cannot start at the page {PAGE_START} and finish at page {PAGE_STOP}. '
                          f'PAGE_START must be inferior or equal to PAGE_STOP.')
 
-    printing_options(print_opt='full')
-
     for page in range(PAGE_START, PAGE_STOP):
         soup = get_soup(page)
-        links = get_links(soup)
-        titles = get_titles(soup)
-        days_left = get_days_left(soup)
-        job_desc, problematic_indexes = get_job_desc(soup)
-        job_tags = get_job_tags(soup)
-        bids = get_bids(soup, problematic_indexes)
-        df = build_dataframe(titles, days_left, job_desc, job_tags,
-                             bids)
+        scraped_data = scrape_job_page(soup, titles=True,
+                                       days_left=True,
+                                       job_desc=False,
+                                       tags=True,
+                                       bids=True,
+                                       links=True)
+
+        df = build_dataframe(scraped_data)
         print(df)
-        # TODO mine deeper
+
+        # TODO mine deeper:
+        #     *rating of the employer
+        #     *location of the employer
+        #     *other job offers from this employer
+        #     *similar jobs
+        #     *list of bidders:
+        #         - name
+        #         - description
+        #         - review
+        #         - link to profile
+
         # TODO merge with Shai's code
+
         # TODO write readme.md
+
         # TODO get requirements file
+
+        # TODO write tests
 
 
 if __name__ == "__main__":
