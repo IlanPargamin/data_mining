@@ -9,7 +9,7 @@ PAGE_STOP = 3
 MAIN_URL = 'https://www.freelancer.com'
 
 
-def get_page_html():
+def get_main_html():
     """
     using beautifulsoup and requests modules, we collect the html "soup" of all the website's relevant urls
     of the main page: www.freelancer.com/jobs.
@@ -137,7 +137,7 @@ def build_dataframe(data_dict):
 
 
 if __name__ == "__main__":
-    soups_main = get_page_html()
+    soups_main = get_main_html()
     dict_main = scrape_main_page(soups_main, titles=True,
                                  days_left=True,
                                  job_desc=True,
