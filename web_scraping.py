@@ -11,7 +11,7 @@ MAIN_URL = 'https://www.freelancer.com'
 
 def get_main_html():
     """
-    using BeautifulSoup and requests modules, we collect the html "soup" of all the website's relevant urls
+    Using BeautifulSoup and requests modules, we collect the html "soup" of all the website's relevant urls
     of the main page: www.freelancer.com/jobs.
     We return a list of html soups of the length of our pages range.
     """
@@ -49,7 +49,8 @@ def scrape_main_page(soups, titles=True,
     :param tags
     :param bids
     :param links
-    :return: dict_out: a dictionary where each True parameter is a key and the associated value is the list of scraped data
+    :return: dict_out: a dictionary where each True parameter is a key and the associated value is the list of scraped
+    data
     """
 
     dict_out = {}
@@ -120,24 +121,22 @@ def scrape_main_page(soups, titles=True,
 def build_dataframe(data_dict):
     """
     Given the dictionary "page #": dictionaries of the lists we scraped,
-    we build several pandas dataframes, each one corresponding to a page, where each list is a column.
-    :return: a dictionary of pandas dataframes
+    we build several pandas dataframes, each one corresponding to a page, where each list is a column, and we merge
+    them in one big dataframe.
+    :return: a pandas dataframe
     """
-    dict_of_dataframe = {}
-    for page in data_dict.keys():
-        dict_of_dataframe[page] = pd.DataFrame.from_dict(data_dict[page])
-    return dict_of_dataframe
+    df = pd.DataFrame.from_dict(data_dict[f'page {PAGE_START}'])
+    for page in list(data_dict.keys())[1:]:
+        df = df.append(pd.DataFrame.from_dict(data_dict[page]))
+    return df
 
 
 def get_column_as_list(dataframe, column):
     """
-    given the dataframe whose keys are "page x" and the name of a column, extracts the values of the column into
+    given a dataframe and the name of a column, extracts the values of the column into
     a list.
     """
-    my_list = []
-    for my_page in dataframe:
-        my_list += list(dataframe[my_page][column])
-    return my_list
+    return dataframe[column].tolist()
 
 
 def join_scrapes(data_main, data_project):
@@ -159,3 +158,4 @@ if __name__ == "__main__":
 
     urls_project = get_column_as_list(data_main, column="links")
     print()
+
