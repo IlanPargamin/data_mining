@@ -11,7 +11,7 @@ MAIN_URL = 'https://www.freelancer.com'
 
 def get_main_html():
     """
-    using beautifulsoup and requests modules, we collect the html "soup" of all the website's relevant urls
+    using BeautifulSoup and requests modules, we collect the html "soup" of all the website's relevant urls
     of the main page: www.freelancer.com/jobs.
     We return a list of html soups of the length of our pages range.
     """
@@ -20,7 +20,7 @@ def get_main_html():
         raise ValueError(f'You cannot start at the page {PAGE_START} and finish at page {PAGE_STOP}. '
                          f'PAGE_START must be inferior or equal to PAGE_STOP.')
 
-    soups_main = []
+    soups = []
     for page in range(PAGE_START, PAGE_STOP + 1):
 
         if page == 1:
@@ -29,9 +29,9 @@ def get_main_html():
             # time.sleep(1)
             response = requests.get(url=MAIN_URL + '/jobs/' + f"{str(page)}")
 
-        soups_main.append(BeautifulSoup(response.content, 'html.parser'))
+        soups.append(BeautifulSoup(response.content, 'html.parser'))
 
-    return soups_main
+    return soups
 
 
 def scrape_main_page(soups, titles=True,
@@ -117,13 +117,6 @@ def scrape_main_page(soups, titles=True,
     return dict_out
 
 
-def join_scrapes(data_main, data_project):
-    """
-    join data_main and data_project into one pandas dataframe
-    """
-    pass
-
-
 def build_dataframe(data_dict):
     """
     Given the dictionary "page #": dictionaries of the lists we scraped,
@@ -136,6 +129,24 @@ def build_dataframe(data_dict):
     return dict_of_dataframe
 
 
+def get_column_as_list(dataframe, column):
+    """
+    given the dataframe whose keys are "page x" and the name of a column, extracts the values of the column into
+    a list.
+    """
+    my_list = []
+    for my_page in dataframe:
+        my_list += list(dataframe[my_page][column])
+    return my_list
+
+
+def join_scrapes(data_main, data_project):
+    """
+    join data_main and data_project into one pandas dataframe
+    """
+    pass
+
+
 if __name__ == "__main__":
     soups_main = get_main_html()
     dict_main = scrape_main_page(soups_main, titles=True,
@@ -145,4 +156,6 @@ if __name__ == "__main__":
                                  bids=True,
                                  links=True)
     data_main = build_dataframe(dict_main)
-    print(data_main['page 1'])
+
+    urls_project = get_column_as_list(data_main, column="links")
+    print()
