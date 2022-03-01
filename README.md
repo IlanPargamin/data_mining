@@ -2,8 +2,9 @@
 
 # web_scraping_freelance
 
-web_scraping_freelance is a web scraping tool. The website target is https://www.freelancer.com. 
+***web_scraping_freelance*** is a web scraping tool. The website target is https://www.freelancer.com. 
 
+## data collection
 The scraper collects the following data:
     1. main page : https://www.freelancer.com/jobs/
         - jot titles
