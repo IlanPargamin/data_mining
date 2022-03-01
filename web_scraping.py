@@ -142,6 +142,7 @@ def get_column_as_list(dataframe, column):
 def join_scrapes(data_main, data_project):
     """
     join data_main and data_project into one pandas dataframe
+    The common unique key for merging is the links
     """
     pass
 
