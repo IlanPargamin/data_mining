@@ -71,19 +71,21 @@ def get_project_dict(soup):
     :param soup:
     :return: dictionary of job offer attributes
     """
-    budget = soup.find('p', class_='PageProjectViewLogout-header-byLine').text
+    budget = soup.find('p', class_='PageProjectViewLogout-header-byLine')
     if budget:
-        budget = budget.strip()[REMOVE_WORD_BUDGET:]
+        budget = budget.text.strip()[REMOVE_WORD_BUDGET:]
 
-    description = soup.find('p', class_='PageProjectViewLogout-detail-paragraph').text
+    description = soup.find('p', class_='PageProjectViewLogout-detail-paragraph')
+    if description:
+        description = description.text
 
-    skills = soup.find('p', class_='PageProjectViewLogout-detail-tags').text
+    skills = soup.find('p', class_='PageProjectViewLogout-detail-tags')
     if skills:
-        skills = skills.strip()[REMOVE_WORD_SKILLS:]
+        skills = skills.text.strip()[REMOVE_WORD_SKILLS:]
 
-    competition_sum = soup.find('h2', class_='Card-heading').text
+    competition_sum = soup.find('h2', class_='Card-heading')
     if competition_sum:
-        competition_sum = competition_sum.strip()
+        competition_sum = competition_sum.text.strip()
 
     competition_list = get_competition_list(soup)
 
