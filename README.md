@@ -29,25 +29,29 @@ The scraper collects the following data:
 Use the package manager [pip](https://pip.pypa.io/en/stable/) to install the required modules.
 
 ```bash
-pip install requirements.txt
+pip install -r requirements.txt
 ```
 
 ## Usage
 
-You can run the scraper file web_scraping_freelance.py in the command line. The first argument argument is the (existing or not) csv file where you want to save the collected data.
+In the file globals.py, you can choose the first and last page of the webiste to scrape.
 
-If the csv file exists, it will be overwritten. 
+You can run the scraper file web_scraping_freelance.py in the command line. 
 
 ```bash
-python web_scraping_freelance.py my_csv_file
+python web_scraping_freelance.py 
 ```
+
+The output, a list of dictionaries, is extracted in the file output.log.
 
 ###### Future usage
 in the future, we should be able to put arguments as for the elements that we do not want to scrape.
+
 Ex:
 If user does not want to collect data on bid and job descriptions:
+
 ```bash
-python web_scraping_freelance.py my_csv_file bid job_description
+python web_scraping_freelance.py bid job_description
 ```
 
 ## Project status

@@ -6,6 +6,25 @@ To choose the range of the pages to scrape, you can modify the global variables 
 from get_main import get_main
 from get_urls import get_urls
 from get_project import get_project
+import logging
+
+
+def setup_logger(name, log_file, level=logging.INFO):
+    """
+    To setup as many loggers as needed
+    """
+
+    handler = logging.FileHandler(log_file)
+    handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
+
+    a_logger = logging.getLogger(name)
+    a_logger.setLevel(level)
+    a_logger.addHandler(handler)
+
+    return a_logger
+
+
+stdout = setup_logger('stdout', 'stdout.log')
 
 
 def join_lists_of_dicts(dict_list1, dict_list2):
@@ -30,9 +49,12 @@ def web_scraping():
     """
     dicts_main = get_main()
     dicts_projects = get_project(get_urls(dicts_main))
-    return join_lists_of_dicts(dicts_main, dicts_projects)
+    merged_dic = join_lists_of_dicts(dicts_main, dicts_projects)
+    stdout.info(merged_dic)
+    return merged_dic
 
 
 if __name__ == "__main__":
     merged_dicts = web_scraping()
-    print()
+
+
