@@ -39,7 +39,7 @@ In the file globals.py, you can choose the first and last page of the webiste to
 You can run the scraper file web_scraping_freelance.py in the command line. 
 
 ```bash
-python web_scraping_freelance.py 
+python web_scraping.py 
 ```
 
 The output, a list of dictionaries, is extracted in the file output.log.
