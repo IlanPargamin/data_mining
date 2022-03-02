@@ -45,14 +45,7 @@ python web_scraping_freelance.py
 The output, a list of dictionaries, is extracted in the file output.log.
 
 ###### Future usage
-in the future, we should be able to put arguments as for the elements that we do not want to scrape.
-
-Ex:
-If user does not want to collect data on bid and job descriptions:
-
-```bash
-python web_scraping_freelance.py bid job_description
-```
+in the future, we should be able to choose the elements that we do not want to scrape in the file globals.py.
 
 ## Project status
 This is a work in progress.
