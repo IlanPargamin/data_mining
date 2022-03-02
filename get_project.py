@@ -3,9 +3,15 @@ from bs4 import BeautifulSoup
 
 REMOVE_WORD_BUDGET = 6
 REMOVE_WORD_SKILLS = 8
+REMOVE_DUMMY_EMPLOY = 1
 
 
 def get_project(list_of_projects):
+    """
+    This function receives a list of urls and returns a list of dictionaries containing scraped information on every link
+    :param list_of_projects:
+    :return: list_of_dict
+    """
     list_of_dict = list()
     for url in list_of_projects:
         page = requests.get(url)
@@ -17,6 +23,12 @@ def get_project(list_of_projects):
 
 
 def get_verified_traits(soup):
+    """
+    This function receives a BeautifulSoup element of a specific job and returns a list of traits that are verified
+    in account of the job owner
+    :param soup:
+    :return: verified_traits_list
+    """
     verified_traits = str(soup.find('ul', class_='verified-list'))
     payment_verified = 'data-tooltip="Payment Verified"'
     made_a_deposit = 'data-tooltip="Made a Deposit"'
@@ -32,31 +44,71 @@ def get_verified_traits(soup):
 
 
 def get_competition_list(soup):
+    """
+    This function receives a BeautifulSoup element of a specific job offer and returns a list of accounts
+    (and their rating) that placed a bid on the received job offer
+    :param soup:
+    :return: competition_list
+    """
     names = soup.find_all('a', class_='FreelancerInfo-username')
     rating = soup.find_all('div', class_='Rating Rating--labeled')
+
     competition_list = []
     for link, rating in zip(names, rating):
         competition_list.append({'url': link.get('href'), 'rating': rating.get('data-star_rating')})
-    # remove first worker from list, in freelancer site the first worker doesn't exist.
-    competition_list = competition_list[1:]
+
+    # remove first worker from list, in freelancer first worker is a dummy.
+    competition_list = competition_list[REMOVE_DUMMY_EMPLOY:]
+
     return competition_list
 
 
 def get_project_dict(soup):
-    budget = soup.find('p', class_='PageProjectViewLogout-header-byLine').text.strip()[REMOVE_WORD_BUDGET:]
+    """
+    This function receives a BeautifulSoup element of a specific job offer and returns a
+    dictionary of attributes (via fill_project_dict function) that are
+    specific for the job offer (i.e description, budget, etc.).
+    :param soup:
+    :return: dictionary of job offer attributes
+    """
+    budget = soup.find('p', class_='PageProjectViewLogout-header-byLine').text
+    if budget:
+        budget = budget.strip()[REMOVE_WORD_BUDGET:]
+
     description = soup.find('p', class_='PageProjectViewLogout-detail-paragraph').text
-    skills = soup.find('p', class_='PageProjectViewLogout-detail-tags').text.strip()[REMOVE_WORD_SKILLS:]
-    competition_sum = soup.find('h2', class_='Card-heading').text.strip()
+
+    skills = soup.find('p', class_='PageProjectViewLogout-detail-tags').text
+    if skills:
+        skills = skills.strip()[REMOVE_WORD_SKILLS:]
+
+    competition_sum = soup.find('h2', class_='Card-heading').text
+    if competition_sum:
+        competition_sum = competition_sum.strip()
+
     competition_list = get_competition_list(soup)
+
     verified_traits = get_verified_traits(soup)
-    return fill_project_dict(description=description, skills=skills, budget=budget,
-                             verified_traits_list=verified_traits, competition_sum=competition_sum,
+
+    return fill_project_dict(description=description,
+                             skills=skills, budget=budget,
+                             verified_traits_list=verified_traits,
+                             competition_sum=competition_sum,
                              competition_list=competition_list)
 
 
-def fill_project_dict(description=None, skills=None, project_id=None, budget=None, verified_traits_list=None,
-                      competition_sum=None, competition_list=None):
-    dict_of_project = {'description': description, 'skills': skills, 'project_id': project_id,
+def fill_project_dict(description=None,
+                      skills=None,
+                      budget=None,
+                      verified_traits_list=None,
+                      competition_sum=None,
+                      competition_list=None):
+    """
+    This function receives parameters, places them in a dictionary and return said dictionary
+    :param competition_list, competition_sum, verified_traits_list, budget, project_id, skills, description:
+    :return: dictionary of job offer attributes
+    """
+
+    dict_of_project = {'description': description, 'skills': skills,
                        'budget': budget, 'verified_traits_list': verified_traits_list,
                        'competition_sum': competition_sum, 'competition_list': competition_list}
     return dict_of_project
