@@ -3,9 +3,9 @@ main file
 To choose the range of the pages to scrape, you can modify the global variables in the file globals.py
 """
 
-from get_project import get_project
 from get_main import get_main
 from get_urls import get_urls
+from get_project import get_project
 
 
 def join_lists_of_dicts(dict_list1, dict_list2):
@@ -25,7 +25,8 @@ def join_lists_of_dicts(dict_list1, dict_list2):
 
 def web_scraping():
     """
-    This function is the main function. Running it is like running the file.
+    This function is the main function. It returns a list of dictionaries where each dictionary contains data on a
+    specific job offer from freelancer.com.
     """
     dicts_main = get_main()
     dicts_projects = get_project(get_urls(dicts_main))

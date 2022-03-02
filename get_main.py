@@ -5,7 +5,7 @@ OUTPUTS: list of dictionaries, where each dictionary corresponds to a job offer 
 are the main characteristics of the job offer.
 """
 
-import requests
+import grequests
 from bs4 import BeautifulSoup
 import pandas as pd
 import re
@@ -36,17 +36,19 @@ def get_main_html():
         raise ValueError(f'You cannot start at the page {PAGE_START} and finish at page {PAGE_STOP}. '
                          f'PAGE_START must be inferior or equal to PAGE_STOP.')
 
-    soups = []
-    for page in range(PAGE_START, PAGE_STOP + 1):
+    urls = [MAIN_URL + '/jobs/' + f"{str(page)}" for page in range(PAGE_START, PAGE_STOP + 1)]
 
-        if page == 1:
-            response = requests.get(url=MAIN_URL + '/jobs')
-        else:
-            response = requests.get(url=MAIN_URL + '/jobs/' + f"{str(page)}")
+    rs = (grequests.get(u) for u in urls)
+    responses = grequests.map(rs)
+    return [BeautifulSoup(response.content, 'html.parser') for response in responses]
 
-        soups.append(BeautifulSoup(response.content, 'html.parser'))
-
-    return soups
+    # for page in range(PAGE_START, PAGE_STOP + 1):
+    #
+    #     response = requests.get(url=MAIN_URL + '/jobs/' + f"{str(page)}")
+    #
+    #     soups.append(BeautifulSoup(response.content, 'html.parser'))
+    #
+    # return soups
 
 
 def build_dataframe(data_dict):

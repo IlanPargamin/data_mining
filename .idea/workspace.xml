@@ -103,7 +103,7 @@
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/get_main.py</url>
-          <line>156</line>
+          <line>158</line>
           <option name="timeStamp" value="27" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
@@ -113,7 +113,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/web_scraping.py</url>
-          <line>36</line>
+          <line>37</line>
           <option name="timeStamp" value="34" />
         </line-breakpoint>
       </breakpoints>
