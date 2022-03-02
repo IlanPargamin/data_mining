@@ -6,22 +6,22 @@
 
 ## data collection
 The scraper collects the following data:
-    1. main page : https://www.freelancer.com/jobs/
-        - jot titles
-        - time left to make a bid
-        - job description
-        - average bid
-        - tags
-    2. job page : https://www.freelancer.com/projects/project_type/project_title-project_id 
-        - rating of the employer
-        - location of the employer
-        - other job offers from this employer
-        - similar jobs
-        - list of bidders:
-            * name
-            * description
-            * review
-            * link to profile
+1. main page : https://www.freelancer.com/jobs/
+- jot titles
+- time left to make a bid
+- job description
+- average bid
+- tags
+2. job page : https://www.freelancer.com/projects/project_type/project_title-project_id 
+- rating of the employer
+- location of the employer
+- other job offers from this employer
+- similar jobs
+- list of bidders:
+* name
+* description
+* review
+* link to profile
 
 
 ## Installation
