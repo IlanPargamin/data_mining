@@ -9,18 +9,16 @@ The scraper collects the following data:
     1. main page : https://www.freelancer.com/jobs/
         - jot titles
         - time left to make a bid
-        - job description
-        - average bid
-        - tags
+        - job url
     2. job page : https://www.freelancer.com/projects/project_type/project_title-project_id 
         - rating of the employer
-        - location of the employer
-        - other job offers from this employer
-        - similar jobs
+        - budget of the employer
+        - required skills
+        - job description
+        - verified traits of the employer
+        - average bid
         - list of bidders:
-            * name
-            * description
-            * review
+            * rating
             * link to profile
 
 
@@ -34,28 +32,51 @@ pip install requirements.txt
 
 ## Usage
 
-You can run the scraper file web_scraping_freelance.py in the command line. The first argument argument is the (existing or not) csv file where you want to save the collected data.
+You can run the scraper file web_scraping_freelance.py in the command line. 
 
-If the csv file exists, it will be overwritten. 
-
+The output of the file is the csv file output.csv (for now).
 ```bash
-python web_scraping_freelance.py my_csv_file
+usage: web_scraping.py [-h] [-not] [-clean] page_start page_stop
+
+positional arguments:
+  page_start
+  page_stop
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -not, --no_scrape_all
+  -clean, --clean_ilan
 ```
+The file takes two arguments: page_start and page_stop. There are hundreds of pages in the website. The user must specify which range she wants to scrape.
+
+The file gives two options:
+* -not, --no_scrape_all : this allows to scrape data from the main page only, not from the sub-pages
+* -clean, --clean_ilan : this allows the user to have its data automatically cleaned in the output. See "Cleaning" section below for details on the cleaning process.
+
+For example, if user wants to get clean data from the main page and the sub-pages, from page 1 to 5, she must write the following command:
+```bash
+python3 web_scraping.py -clean 1 5
+```
+
+For example, if user wants to get raw data from the main page only, from page 1 only, she must write the following command:
+```bash
+python3 web_scraping.py -not 1 1
+```
+
 
 ###### Future usage
-in the future, we should be able to put arguments as for the elements that we do not want to scrape.
-Ex:
-If user does not want to collect data on bid and job descriptions:
-```bash
-python web_scraping_freelance.py my_csv_file bid job_description
-```
+
+## Data cleaning process
+There is no general rule. The data is raw. 
+We gave as many IDs as possible to items that appear many times (for example in "required skills" or "verified traits"). 
+We identified, for bids and budget, the currency, the type of payment (per hour or fixed range) and the amount.
 
 ## Project status
 This is a work in progress.
 
 ## Roadmap
 Four checkpoints in total.
-This part checks the first checkpoint. Three more to go.
+This part checks the second checkpoint. Two more to go.
 
 ## Authors and acknowledgement 
 The authors of this web scraper are Shai Duchan and Ilan Pargamin.

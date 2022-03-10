@@ -17,12 +17,7 @@ def get_main():
     Corresponds to the main function of the file.
     Careful: 'main' corresponds to the main page of the website 'freelancer.com/jobs'.
     """
-    return scrape_main_page(get_main_html(),
-                            title=True,
-                            days_left=True,
-                            job_desc=True,
-                            tags=True,
-                            bid=True)
+    return scrape_main_page(get_main_html(), title=True, days_left=True, job_desc=False, tags=False, bid=False)
 
 
 def get_main_html():
@@ -31,10 +26,6 @@ def get_main_html():
     of the main page: www.freelancer.com/jobs.
     We return a list of html soups of the length of our pages range.
     """
-
-    if PAGE_START > PAGE_STOP:
-        raise ValueError(f'You cannot start at the page {PAGE_START} and finish at page {PAGE_STOP}. '
-                         f'PAGE_START must be inferior or equal to PAGE_STOP.')
 
     urls = [MAIN_URL + '/jobs/' + f"{str(page)}" for page in range(PAGE_START, PAGE_STOP + 1)]
 
@@ -68,12 +59,7 @@ def build_dataframe(data_dict):
     return df
 
 
-def scrape_main_page(soups,
-                     title=True,
-                     days_left=True,
-                     job_desc=True,
-                     tags=True,
-                     bid=True):
+def scrape_main_page(soups, title=True, days_left=True, job_desc=False, tags=False, bid=False):
     """
     For each parameter, returns a list of scraped data from the main page if parameter True.
     ARGUMENTS: soups, title, days_left, job_desc, tags, bid and url.
@@ -99,13 +85,13 @@ def scrape_main_page(soups,
 
         # job titles
         if title:
-            dict_out[my_page]["titles"] = [x.text.strip().split("\n")[0]
-                                           for x in
+            dict_out[my_page]["titles"] = [title.text.strip().split("\n")[0]
+                                           for title in
                                            list(soup.find_all('a', class_='JobSearchCard-primary-heading-link'))]
 
         # time remaining in days to make a bid to a specific job offer
         if days_left:
-            dict_out[my_page]["days left to bid"] = [x.string for x in
+            dict_out[my_page]["days left to bid"] = [day.string for day in
                                                      list(soup.find_all('span',
                                                                         attrs={
                                                                             'class': 'JobSearchCard-primary-heading'
@@ -114,10 +100,10 @@ def scrape_main_page(soups,
         # job descriptions
         # The following lines of code also creates a list of problematic indexes. That refers to job offers that are not
         # public neither open to bidding.
+        problematic_indexes = []
         if job_desc or bid:
             des_all = soup.find_all(class_="JobSearchCard-primary-description")
             desc_list = []
-            problematic_indexes = []
             for i in range(len(des_all)):
                 desc_list.append(des_all[i].text.strip())
                 if 'Please Sign Up or Login to see details.' in des_all[i].text.strip():
@@ -135,6 +121,7 @@ def scrape_main_page(soups,
         # There is no bid if the index is problematic. We append the list with ''
         if bid:
             bids_list = []
+
             for i in range(results_by_page - len(problematic_indexes)):
                 if i in problematic_indexes:
                     bids_list.append('')
@@ -144,10 +131,8 @@ def scrape_main_page(soups,
             dict_out[my_page]["bids"] = [x.split("\n")[0] for x in bids_list]
 
         # links of the job offer: must be scraped
-        dict_out[my_page]["url"] = [MAIN_URL + x['href'] for x in
-                                      list(
-                                          soup.find_all('a', href=True,
-                                                        class_="JobSearchCard-primary-heading-link"))]
+        dict_out[my_page]["url"] = [MAIN_URL + my_url['href'] for my_url in
+                                    list(soup.find_all('a', href=True, class_="JobSearchCard-primary-heading-link"))]
 
     # instead of one dictionary of lists, transform into a list of dictionaries
     data_main = build_dataframe(dict_out)

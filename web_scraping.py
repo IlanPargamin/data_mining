@@ -2,14 +2,16 @@
 main file
 To choose the range of the pages to scrape, you can modify the global variables in the file globals.py
 """
+# TODO write log file
 
 from get_main import get_main
 from get_urls import get_urls
 from get_project import get_project
+from clean import clean_ilan
 import logging
 import argparse
 import csv
-
+import sys
 
 # def setup_logger(name, log_file, level=logging.INFO):
 #     """
@@ -63,17 +65,14 @@ def web_scraping(run_get_project=True):
     """
     dicts_main = get_main()
     if run_get_project:
+        print(f"including project pages")
         dicts_projects = get_project(get_urls(dicts_main))
         merged_dic = join_lists_of_dicts(dicts_main, dicts_projects)
         # stdout.info(merged_dic)
-
-        export_to_csv(merged_dic)
-
         return merged_dic
     else:
         # stdout.info(dicts_main)
-        export_to_csv(dicts_main)
-
+        print(f"main page only")
         return dicts_main
 
 
@@ -97,24 +96,36 @@ def my_parser():
     parser.add_argument('page_start')
     parser.add_argument('page_stop')
     parser.add_argument('-not', '--no_scrape_all', action='store_true')
+    parser.add_argument('-clean', '--clean_ilan', action='store_true')
     args = parser.parse_args()
 
-    # if not isinstance(int(args.page_start), int) or not isinstance(int(args.page_stop), int):
-    #     print(f'input must be digit')
-    #     sys.exit(1)
 
+    if not args.page_start.isdigit() or not args.page_stop.isdigit():
+        print(f'input must be digit')
+        sys.exit(1)
+
+
+    if int(args.page_start) > int(args.page_stop):
+        print("The starting page must be lower than the last page")
+        sys.exit(1)
+
+    print(f"scraping freelancer.com/jobs from page {args.page_start} to page {args.page_stop} ")
     if args.no_scrape_all:
-        page2page(args.page_start, args.page_stop)
-        print(f"scraping freelancer.com/jobs from page {args.page_start} to page {args.page_stop} "
-              f"main page only")
-        web_scraping(run_get_project=False)
-
+        run_get_project = False
     else:
-        page2page(args.page_start, args.page_stop)
-        print(f"scraping freelancer.com/jobs from page {args.page_start} to page {args.page_stop} "
-              f"including project pages")
-        web_scraping(run_get_project=True)
+        run_get_project = True
+
+    page2page(args.page_start, args.page_stop)
+    if args.clean_ilan:
+        export_to_csv(clean_ilan(web_scraping(run_get_project)))
+    else:
+        export_to_csv(web_scraping(run_get_project))
+
+    print("Output extracted in the output.csv file.")
 
 
 if __name__ == "__main__":
     my_parser()
+    #dict_merged = web_scraping(run_get_project=True)
+    #dict_merged = clean_ilan(dict_merged)
+
