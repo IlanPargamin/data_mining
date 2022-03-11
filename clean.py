@@ -1,17 +1,25 @@
 import re
-
+import pandas as pd
+import csv
 # TODO clean
 # TODO write docstrings
 def clean_ilan(dict_merged):
     """
 
     """
+    dict_merged = index_jobs(dict_merged)
     dict_merged = clean_verified_traits(dict_merged)
     dict_merged = clean_skills(dict_merged)
     dict_merged = clean_budget(dict_merged)
     dict_merged = clean_days_left(dict_merged)
     return dict_merged
 
+def index_jobs(dict_merged):
+    id = 1
+    for my_dict in dict_merged:
+        my_dict["id"] = id
+        id += 1
+    return dict_merged
 
 def clean_budget(dict_merged):
     """
@@ -20,13 +28,17 @@ def clean_budget(dict_merged):
     for my_dict in dict_merged:
         # get currency
         if 'budget' in my_dict and my_dict['budget']:
-            currency = re.search(r'[A-Z]{3}', my_dict['budget']).group(0)
-            amount = re.search(r'[0-9]+\-[0-9]+', my_dict['budget']).group(0)
+            match = re.search(r'[A-Z]{3}', my_dict['budget'])
+            if match:
+                my_dict['currency'] = match.group(0)
+            match = re.search(r'[0-9]+\-[0-9]+', my_dict['budget'])
+            if match:
+                my_dict['min_value'] = match.group(0).split("-")[0]
+                my_dict['max_value'] = match.group(0).split("-")[1]
             if "hour" in my_dict['budget']:
-                per_hour = "per_hour"
+                my_dict['per_hour'] = True
             else:
-                per_hour = "range"
-            my_dict["budget"] = (currency, amount, per_hour)
+                my_dict['per_hour'] = False
 
     return dict_merged
 
@@ -34,25 +46,52 @@ def clean_budget(dict_merged):
 def clean_skills(dict_merged):
     """
     """
-    ## add in all dicts a list of all skills' id
-    all_skills = {""}
+
+
+    # add in the dicts a list of each skill
+    all_skills = {"PDF"}
     for my_dict in dict_merged:
         if 'skills' in my_dict and my_dict['skills']:
-            for skill in my_dict['skills'].split(","):
-                all_skills.add(skill)
-
-    ## add ID to each skill
-    skill_ids = {}
-    for skill in all_skills:
-        skill_ids[skill] = id(skill)
-
-    ## add in the dicts a list of each (skill, id)
-    for my_dict in dict_merged:
-        if 'skills' in my_dict and my_dict['skills']:
-            my_dict['skills_and_id'] = []
             for each_skill in my_dict['skills'].split(","):
-                my_dict['skills_and_id'].append((each_skill, (lambda x: skill_ids[x])(each_skill)))
-            my_dict['skills'] = my_dict.pop('skills_and_id')
+                all_skills.add(each_skill.strip())
+
+    id = 1
+    skills_id = {}
+    for skill in all_skills:
+        skills_id[skill] = [id]
+        id += 1
+
+    for my_dict in dict_merged:
+        for skill in all_skills:
+            if my_dict["skills"]:
+                if skill in my_dict["skills"]:
+                    my_dict[skill] = skills_id[skill][0]
+
+    # we keep the dictionary element-id in a csv file. We will need it to build the sql database
+    df = pd.DataFrame.from_dict(skills_id)
+    df.to_csv(r'skills_id.csv', index=False, header=True)
+
+    # we export to a csv file the data we will need
+    your_keys = list(all_skills)
+    dict_export = []
+    for my_dict in dict_merged:
+        dict_export.append({k: v for k, v in my_dict.items() if k in your_keys})
+
+    keys = list(all_skills)
+    with open('skills.csv', 'w', newline='') as output_file:
+        dict_writer = csv.DictWriter(output_file, keys)
+        dict_writer.writeheader()
+        dict_writer.writerows(dict_export)
+
+    df_skill = pd.read_csv(r'skills.csv', delimiter=',')
+    df_skill.index += 1
+    df_skill = df_skill.stack(dropna=True).to_frame()
+    df_skill = df_skill.reset_index()
+    df_skill = df_skill.rename(columns={"level_0": "index", "level_1": "element", 0: "element_id"})
+    # rename columns
+    df_skill.to_csv('skills.csv')
+
+
     return dict_merged
 
 
@@ -67,29 +106,47 @@ def clean_verified_traits(dict_merged):
     """
 
     """
-    verified_traits = {'email_verified', 'payment_verified', 'deposit_verified'}
+    # get all traits
+    traits = {"E-mail Verified", "Payment Verified", "Made a Deposit"}
     traits_id = {}
-    for skill in verified_traits:
-        traits_id[skill] = id(skill)
+    id = 1
+    for trait in traits:
+        traits_id[trait] = [id]
+        id += 1
 
     for my_dict in dict_merged:
-        if 'verified_traits_list' in my_dict:
-            if 'E-mail Verified' in my_dict['verified_traits_list']:
-                email = ('email_verified', (lambda x: traits_id[x])('email_verified'))
+        for trait in traits:
+            if trait in my_dict["verified_traits_list"]:
+                my_dict[trait] = traits_id[trait][0]
             else:
-                email = None
-            if 'Payment Verified' in my_dict['verified_traits_list']:
-                payment = ('payment_verified', (lambda x: traits_id[x])('payment_verified'))
-            else:
-                payment = None
-            if 'Made a Deposit' in my_dict['verified_traits_list']:
-                deposit = ('deposit_verified', (lambda x: traits_id[x])('deposit_verified'))
-            else:
-                deposit = None
-            my_dict['verified_traits_list'] = (email, payment, deposit)
+                my_dict[trait] = None
+
+    # we keep the dictionary element-id in a csv file. We will need it to build the sql database
+    df = pd.DataFrame.from_dict(traits_id)
+    df.to_csv(r'traits_id.csv', index=False, header=True)
+
+    # we export to a csv file the data we will need
+    your_keys = ['Payment Verified', 'Made a Deposit', 'E-mail Verified']
+    dict_export = []
+    for my_dict in dict_merged:
+        dict_export.append({k: v for k, v in my_dict.items() if k in your_keys})
+
+    keys = dict_export[0].keys()
+    with open('verifications.csv', 'w', newline='') as output_file:
+        dict_writer = csv.DictWriter(output_file, keys)
+        dict_writer.writeheader()
+        dict_writer.writerows(dict_export)
+
+    df_verif = pd.read_csv(r'verifications.csv', delimiter=',')
+    df_verif.index += 1
+    df_verif = df_verif.stack(dropna=False).to_frame()
+    df_verif = df_verif.reset_index()
+    df_verif = df_verif.rename(columns={"level_0": "index", "level_1": "element", 0: "element_id"})
+    # rename columns
+    df_verif.to_csv('verifications.csv', index=False)
     return dict_merged
 
 
 if __name__ == "__main__":
-    #clean_ilan(dict_merged)
+    # clean_ilan(dict_merged)
     print()

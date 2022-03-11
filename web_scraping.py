@@ -4,6 +4,7 @@ To choose the range of the pages to scrape, you can modify the global variables 
 """
 # TODO write log file
 
+
 from get_main import get_main
 from get_urls import get_urls
 from get_project import get_project
@@ -13,21 +14,22 @@ import argparse
 import csv
 import sys
 
-# def setup_logger(name, log_file, level=logging.INFO):
-#     """
-#     To setup as many loggers as needed
-#     """
-#
-#     handler = logging.FileHandler(log_file)
-#     handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
-#
-#     a_logger = logging.getLogger(name)
-#     a_logger.setLevel(level)
-#     a_logger.addHandler(handler)
-#
-#     return a_logger
-#
-#
+
+def setup_logger(name, log_file, level=logging.INFO):
+    """
+    To setup as many loggers as needed
+    """
+
+    handler = logging.FileHandler(log_file)
+    handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
+
+    a_logger = logging.getLogger(name)
+    a_logger.setLevel(level)
+    a_logger.addHandler(handler)
+
+    return a_logger
+
+
 # stdout = setup_logger('stdout', 'stdout.log')
 
 
@@ -99,11 +101,9 @@ def my_parser():
     parser.add_argument('-clean', '--clean_ilan', action='store_true')
     args = parser.parse_args()
 
-
     if not args.page_start.isdigit() or not args.page_stop.isdigit():
         print(f'input must be digit')
         sys.exit(1)
-
 
     if int(args.page_start) > int(args.page_stop):
         print("The starting page must be lower than the last page")
@@ -126,6 +126,6 @@ def my_parser():
 
 if __name__ == "__main__":
     my_parser()
-    #dict_merged = web_scraping(run_get_project=True)
-    #dict_merged = clean_ilan(dict_merged)
-
+    # dict_merged = web_scraping(run_get_project=True)
+    # dict_merged = clean_ilan(dict_merged)
+    # export_to_csv(dict_merged)

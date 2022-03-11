@@ -10,6 +10,7 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import re
 from globals import *
+import requests
 
 
 def get_main():
@@ -20,26 +21,31 @@ def get_main():
     return scrape_main_page(get_main_html(), title=True, days_left=True, job_desc=False, tags=False, bid=False)
 
 
-def get_main_html():
+def get_main_html(use_grequest=True):
     """
     Using BeautifulSoup and requests modules, we collect the html "soup" of all the website's relevant urls
     of the main page: www.freelancer.com/jobs.
+
     We return a list of html soups of the length of our pages range.
+
+    If use_grequest is True, we use grequest. Request otherwise.
     """
 
     urls = [MAIN_URL + '/jobs/' + f"{str(page)}" for page in range(PAGE_START, PAGE_STOP + 1)]
 
-    rs = (grequests.get(u) for u in urls)
-    responses = grequests.map(rs)
-    return [BeautifulSoup(response.content, 'html.parser') for response in responses]
+    if use_grequest:
+        rs = (grequests.get(u) for u in urls)
+        responses = grequests.map(rs)
+        return [BeautifulSoup(response.content, 'html.parser') for response in responses]
 
-    # for page in range(PAGE_START, PAGE_STOP + 1):
-    #
-    #     response = requests.get(url=MAIN_URL + '/jobs/' + f"{str(page)}")
-    #
-    #     soups.append(BeautifulSoup(response.content, 'html.parser'))
-    #
-    # return soups
+    else:
+        soups = []
+        for page in range(PAGE_START, PAGE_STOP + 1):
+            response = requests.get(url=MAIN_URL + '/jobs/' + f"{str(page)}")
+
+            soups.append(BeautifulSoup(response.content, 'html.parser'))
+
+        return soups
 
 
 def build_dataframe(data_dict):
@@ -49,8 +55,9 @@ def build_dataframe(data_dict):
                                                                 {"page 2": {dictionaries of the lists we scraped},
                                                                 {"page 3": {dictionaries of the lists we scraped},
                                                                 ...}
-    we merge the {dictionaries of the lists we scraped} into one big dataframe.
+    we merge the dictionaries of the lists we scraped into one big dataframe.
     We lose the information of which page the data was scraped from.
+
     :return: a pandas dataframe whose columns are the keys of the {dictionaries of the lists we scraped}.
     """
     df = pd.DataFrame.from_dict(data_dict[f'page {PAGE_START}'])
