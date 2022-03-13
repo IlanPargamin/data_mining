@@ -48,12 +48,12 @@ def join_lists_of_dicts(dict_list1, dict_list2):
     return dict_list1
 
 
-def export_to_csv(list_of_dicts):
+def export_to_csv(list_of_dicts, directory_path):
     """
     export a list of dictionaries to a csv file
     """
     keys = list_of_dicts[0].keys()
-    with open('output.csv', 'w', newline='') as output_file:
+    with open(directory_path + 'freelancer.csv', 'w', newline='') as output_file:
         dict_writer = csv.DictWriter(output_file, keys)
         dict_writer.writeheader()
         dict_writer.writerows(list_of_dicts)
@@ -97,16 +97,19 @@ def my_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('page_start')
     parser.add_argument('page_stop')
-    #parser.add_argument('directory_path')
+    parser.add_argument('directory_path')
     parser.add_argument('-not', '--no_scrape_all', action='store_true')
     parser.add_argument('-tosql', '--tosql', action='store_true')
+    parser.add_argument('-tocsv', '--tocsv', action='store_true')
     args = parser.parse_args()
+
+    # pout -not, ajouter les None pour ce qu'on ne scrape pas
 
     # TODO put tests in a function
 
     # TODO add test: if directory_path does not exist + implement functionality
 
-    # TODO il faut rentrer directory_path seulement si on met -tosql
+    # TODO il faut rentrer directory_path seulement si on met -tosql ou -csv
 
     if not args.page_start.isdigit() or not args.page_stop.isdigit():
         print(f'input must be digit')
@@ -126,10 +129,13 @@ def my_parser():
     dict_merged = web_scraping(run_get_project)
 
     if args.tosql:
-        create_sql(dict_merged)
+        create_sql(dict_merged, args.directory_path)
         print("Output extracted in the freelancer.db database.")
-    else:
-        print("No output extracted")
+        # TODO give instructions how to open it
+
+    if args.tocsv:
+        export_to_csv(dict_merged, args.directory_path)
+        print("Data exported to file freelancer.csv")
 
 
 if __name__ == "__main__":

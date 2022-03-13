@@ -4,14 +4,13 @@ from cleaner import cleaner
 #from web_scraping import web_scraping
 
 
-def create_sql(dict_merged):
+def create_sql(dict_merged, directory_path):
     # clean dictionaries
     dict_merged = cleaner(dict_merged)
 
     # initializa database + chose filepath
     app = Flask(__name__)
-    app.config[
-        'SQLALCHEMY_DATABASE_URI'] = 'sqlite:////Users/ilanpargamin/Desktop/freelancer.db'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////' + directory_path + '/freelancer.db'
     # TODO change to path_file as input
     db = SQLAlchemy(app)
     db.init_app(app)
