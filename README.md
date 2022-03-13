@@ -6,20 +6,20 @@
 
 ## data collection
 The scraper collects the following data:
-    1. main page : https://www.freelancer.com/jobs/
-        - jot titles
-        - time left to make a bid
-        - job url
-    2. job page : https://www.freelancer.com/projects/project_type/project_title-project_id 
-        - rating of the employer
-        - budget of the employer
-        - required skills
-        - job description
-        - verified traits of the employer
-        - average bid
-        - list of bidders:
-            * rating
-            * link to profile
+1. main page : https://www.freelancer.com/jobs/
+- jot titles
+- time left to make a bid
+ - job url
+2. job page : https://www.freelancer.com/projects/project_type/project_title-project_id 
+- rating of the employer
+- budget of the employer
+- required skills
+- job description
+- verified traits of the employer
+- average bid
+- list of bidders:
+-    * rating
+-    * link to profile
 
 
 ## Installation
@@ -36,29 +36,31 @@ You can run the scraper file web_scraping_freelance.py in the command line.
 
 The output of the file is the csv file output.csv (for now).
 ```bash
-usage: web_scraping.py [-h] [-not] [-clean] page_start page_stop
+usage: web_scraping.py [-h] [-not] [-tosql]
+                       page_start page_stop directory_path
 
 positional arguments:
   page_start
   page_stop
+  directory_path
 
 optional arguments:
   -h, --help            show this help message and exit
   -not, --no_scrape_all
-  -clean, --clean_ilan
+  -tosql, --tosql
 ```
+
 The file takes two arguments: page_start and page_stop. There are hundreds of pages in the website. The user must specify which range she wants to scrape.
 
 The file gives two options:
 * -not, --no_scrape_all : this allows to scrape data from the main page only, not from the sub-pages
-* -clean, --clean_ilan : this allows the user to have its data automatically cleaned in the output. See "Cleaning" section below for details on the cleaning process.
 
-For example, if user wants to get clean data from the main page and the sub-pages, from page 1 to 5, she must write the following command:
+For example, if user wants to get  data from the main page and the sub-pages, from page 1 to 5, she must write the following command:
 ```bash
-python3 web_scraping.py -clean 1 5
+python3 web_scraping.py 1 5
 ```
 
-For example, if user wants to get raw data from the main page only, from page 1 only, she must write the following command:
+For example, if user wants to get data from the main page only, from page 1 only, she must write the following command:
 ```bash
 python3 web_scraping.py -not 1 1
 ```
@@ -67,8 +69,8 @@ python3 web_scraping.py -not 1 1
 ###### Future usage
 
 ## Data cleaning process
-There is no general rule. The data is raw. 
-We gave as many IDs as possible to items that appear many times (for example in "required skills" or "verified traits"). 
+There is no general rule.
+
 We identified, for bids and budget, the currency, the type of payment (per hour or fixed range) and the amount.
 
 ## Project status

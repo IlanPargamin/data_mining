@@ -8,7 +8,7 @@ To choose the range of the pages to scrape, you can modify the global variables 
 from get_main import get_main
 from get_urls import get_urls
 from get_project import get_project
-from clean import clean_ilan
+from build_sql import create_sql
 import logging
 import argparse
 import csv
@@ -97,9 +97,16 @@ def my_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('page_start')
     parser.add_argument('page_stop')
+    #parser.add_argument('directory_path')
     parser.add_argument('-not', '--no_scrape_all', action='store_true')
-    parser.add_argument('-clean', '--clean_ilan', action='store_true')
+    parser.add_argument('-tosql', '--tosql', action='store_true')
     args = parser.parse_args()
+
+    # TODO put tests in a function
+
+    # TODO add test: if directory_path does not exist + implement functionality
+
+    # TODO il faut rentrer directory_path seulement si on met -tosql
 
     if not args.page_start.isdigit() or not args.page_stop.isdigit():
         print(f'input must be digit')
@@ -116,16 +123,16 @@ def my_parser():
         run_get_project = True
 
     page2page(args.page_start, args.page_stop)
-    if args.clean_ilan:
-        export_to_csv(clean_ilan(web_scraping(run_get_project)))
-    else:
-        export_to_csv(web_scraping(run_get_project))
+    dict_merged = web_scraping(run_get_project)
 
-    print("Output extracted in the output.csv file.")
+    if args.tosql:
+        create_sql(dict_merged)
+        print("Output extracted in the freelancer.db database.")
+    else:
+        print("No output extracted")
 
 
 if __name__ == "__main__":
     my_parser()
     # dict_merged = web_scraping(run_get_project=True)
-    # dict_merged = clean_ilan(dict_merged)
     # export_to_csv(dict_merged)
