@@ -147,3 +147,7 @@ def my_parser():
         dict_merged = cleaner(dict_merged)
         export_to_csv(dict_merged, args.directory_path)
         print(f"Data exported to file freelancer.csv in the directory {args.directory_path}")
+
+
+if __name__ == "__main__":
+    my_parser()

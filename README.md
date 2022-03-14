@@ -27,16 +27,15 @@ The scraper collects the following data:
 Use the package manager [pip](https://pip.pypa.io/en/stable/) to install the required modules.
 
 ```bash
-pip install requirements.txt
+pip install -r requirements.txt
 ```
 
 ## Usage
 
-You can run the scraper file web_scraping_freelance.py in the command line. 
+You can run the scraper file web_scraping.py in the command line. 
 
-The output of the file is the csv file output.csv (for now).
 ```bash
-usage: web_scraping.py [-h] [-not] [-tosql]
+usage: web_scraping.py [-h] [-not] [-tosql] [-tocsv]
                        page_start page_stop directory_path
 
 positional arguments:
@@ -47,26 +46,61 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   -not, --no_scrape_all
-  -tosql, --tosql
+                        collect titles, urls and number of days left to bid
+                        only
+  -tosql, --tosql       export to freelancer.db
+  -tocsv, --tocsv       export to freelancer.csv
+
+additional information: If neither -tocsv nor -csv are specified, the scraper
+does not export the data to any file
 ```
 
-The file takes two arguments: page_start and page_stop. There are hundreds of pages in the website. The user must specify which range she wants to scrape.
+The file takes three arguments: page_start, page_stop and directory_path. 
 
-The file gives two options:
+There are hundreds of pages in the website. The user must specify which range she wants to scrape. 
+
+The directory_path is where the output file will be exported.
+
+The file gives three options:
 * -not, --no_scrape_all : this allows to scrape data from the main page only, not from the sub-pages
+* -tosql, --tosql: export to freelancer.db
+* -tocsv, --tocsv: export to freelancer.csv
 
-For example, if user wants to get  data from the main page and the sub-pages, from page 1 to 5, she must write the following command:
+For example, if user wants to get  data from the main page and the sub-pages, from page 1 to 5, and export in a csv file in the directory whose path is "directory_path" she must write the following command:
 ```bash
-python3 web_scraping.py 1 5
+python3 web_scraping.py -tocsv 1 5 directory_path
 ```
 
-For example, if user wants to get data from the main page only, from page 1 only, she must write the following command:
+For example, if user wants to get data from the main page only, from page 1 only, and export it to a db file (database) she must write the following command:
 ```bash
-python3 web_scraping.py -not 1 1
+python3 web_scraping.py -not -tosql 1 1 directory_path
 ```
+
+## Access to db database
+In the terminal, write the command:
+```bash
+sqlite3
+```
+and 
+```bash
+.open freelancer.db
+```
+
+To check that the database exists, write
+```bash
+.tables
+```
+The output should look like:
+
+```bash
+BudgetInfo       Job              SkillSet         VerificationSet
+BudgetSet        Skill            Verification
+```
+
 
 
 ###### Future usage
+Empty.
 
 ## Data cleaning process
 There is no general rule.
