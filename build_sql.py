@@ -1,17 +1,27 @@
+"""
+This file, imported in web_scraping, creates the sql database based on a list of dictionaries with the scraped data
+from freelancer.com.
+"""
+
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from cleaner import cleaner
-#from web_scraping import web_scraping
+
+# TODO write README - explain each table + design database table
 
 
 def create_sql(dict_merged, directory_path):
+    """
+    Given dict_merged, a list of dictionaries with the scraped data from freelancer.com, and a dicrectory path,
+    the function creates a sql database freelancer.db in the given directory.
+    Each class is a table in the database.
+    """
     # clean dictionaries
     dict_merged = cleaner(dict_merged)
 
-    # initializa database + chose filepath
+    # initialize database
     app = Flask(__name__)
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////' + directory_path + '/freelancer.db'
-    # TODO change to path_file as input
     db = SQLAlchemy(app)
     db.init_app(app)
 
@@ -25,10 +35,6 @@ def create_sql(dict_merged, directory_path):
         job_description = db.Column(db.String(100))
         url = db.Column(db.String(100), nullable=False)
 
-        # For displaying our database record rather than just numbers
-        def __repr__(self):
-            return f'job {self.id} --- {self.title}'
-
     class SkillSet(db.Model):
         __tablename__ = 'SkillSet'
         # Initialize the Column
@@ -37,10 +43,6 @@ def create_sql(dict_merged, directory_path):
 
         # Initialize the relationship
         job = db.relationship('Job', backref=db.backref('SkillSet', lazy=True))
-
-        # For displaying our database record rather than just numbers
-        def __repr__(self):
-            return f'job {self.job_id} --- skill set id : {self.id}'
 
     class Skill(db.Model):
         __tablename__ = 'Skill'
@@ -52,10 +54,6 @@ def create_sql(dict_merged, directory_path):
         # Initialize the relationship
         skillset = db.relationship('SkillSet', backref=db.backref('Skill', lazy=True))
 
-        # For displaying our database record rather than just numbers
-        def __repr__(self):
-            return f'skill id {self.id} --- skill name {self.name} --- skill set id : {self.skill_set_id} '
-
     class BudgetSet(db.Model):
         __tablename__ = 'BudgetSet'
         # Initialize the Column
@@ -64,10 +62,6 @@ def create_sql(dict_merged, directory_path):
 
         # Initialize the relationship
         job = db.relationship('Job', backref=db.backref('BudgetSet', lazy=True))
-
-        # For displaying our database record rather than just numbers
-        def __repr__(self):
-            return f'job {self.job_id} --- budget id : {self.id}'
 
     class BudgetInfo(db.Model):
         __tablename__ = 'BudgetInfo'
@@ -82,10 +76,6 @@ def create_sql(dict_merged, directory_path):
         # Initialize the relationship
         budget_set = db.relationship('BudgetSet', backref=db.backref('BudgetInfo', lazy=True))
 
-        # For displaying our database record rather than just numbers
-        def __repr__(self):
-            return f'budget {self.id} ---  {self.currency}, {self.per_hour}, between {self.min} and {self.max}'
-
     class VerificationSet(db.Model):
         __tablename__ = 'VerificationSet'
         # Initialize the Column
@@ -94,10 +84,6 @@ def create_sql(dict_merged, directory_path):
 
         # Initialize the relationship
         job = db.relationship('Job', backref=db.backref('VerificationSet', lazy=True))
-
-        # For displaying our database record rather than just numbers
-        def __repr__(self):
-            return f'job {self.job_id} --- verification id : {self.id}'
 
     class Verification(db.Model):
         __tablename__ = 'Verification'
@@ -109,15 +95,10 @@ def create_sql(dict_merged, directory_path):
         # Initialize the relationship
         verification_set = db.relationship('VerificationSet', backref=db.backref('Verification', lazy=True))
 
-        # For displaying our database record rather than just numbers
-        def __repr__(self):
-            return f'job {self.id} --- verifications : ' \
-                   f'email: {self.email}, ' \
-                   f'made deposit: {self.made_deposit}, ' \
-                   f'payment: {self.payment}'
-
+    # create database
     db.create_all()
 
+    # insert values from dict_merged
     for a_dict in dict_merged:
         # job
         job = Job(title=a_dict["titles"],
@@ -158,10 +139,6 @@ def create_sql(dict_merged, directory_path):
                                         name=my_verif)
             db.session.add(verification)
 
-        # Insert to the database
+    # Insert to the database
     db.session.commit()
 
-
-# if __name__ == "__main__":
-#     dict_merged = web_scraping(run_get_project=True)
-#     create_sql(dict_merged)

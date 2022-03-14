@@ -2,17 +2,17 @@
 main file
 To choose the range of the pages to scrape, you can modify the global variables in the file globals.py
 """
-# TODO write log file
-
 
 from get_main import get_main
 from get_urls import get_urls
 from get_project import get_project
 from build_sql import create_sql
+from cleaner import cleaner
 import logging
 import argparse
 import csv
 import sys
+import textwrap
 
 
 def setup_logger(name, log_file, level=logging.INFO):
@@ -31,6 +31,7 @@ def setup_logger(name, log_file, level=logging.INFO):
 
 
 # stdout = setup_logger('stdout', 'stdout.log')
+# TODO write log file
 
 
 def join_lists_of_dicts(dict_list1, dict_list2):
@@ -51,9 +52,10 @@ def join_lists_of_dicts(dict_list1, dict_list2):
 def export_to_csv(list_of_dicts, directory_path):
     """
     export a list of dictionaries to a csv file
+    creates the file if it does not exist
     """
     keys = list_of_dicts[0].keys()
-    with open(directory_path + 'freelancer.csv', 'w', newline='') as output_file:
+    with open(directory_path + '/freelancer.csv', 'w+', newline='') as output_file:
         dict_writer = csv.DictWriter(output_file, keys)
         dict_writer.writeheader()
         dict_writer.writerows(list_of_dicts)
@@ -70,47 +72,25 @@ def web_scraping(run_get_project=True):
         print(f"including project pages")
         dicts_projects = get_project(get_urls(dicts_main))
         merged_dic = join_lists_of_dicts(dicts_main, dicts_projects)
-        # stdout.info(merged_dic)
         return merged_dic
     else:
-        # stdout.info(dicts_main)
         print(f"main page only")
         return dicts_main
 
 
 def page2page(page_start, page_stop):
     """
-    modify our globals by print the terminal arguments in the file globals.py
+    modify our globals by printing the terminal arguments in the file globals.py
     """
     file_path = 'globals.py'
     with open(file_path, 'w') as f:
         f.write(f"""MAIN_URL = 'https://www.freelancer.com'\nPAGE_START = {page_start}\nPAGE_STOP = {page_stop}""")
 
 
-def my_parser():
+def test_valid_arguments(args):
     """
-    parses the arguments from the command line
-    User must input the pages range she wants to scrape (page_start and page_stop).
-    If the user does not want details on the projects (i.e. collect what the function get_project returns) then
-    she must add -not in the console command.
+    Exit if parsed arguments are not valid
     """
-    parser = argparse.ArgumentParser()
-    parser.add_argument('page_start')
-    parser.add_argument('page_stop')
-    parser.add_argument('directory_path')
-    parser.add_argument('-not', '--no_scrape_all', action='store_true')
-    parser.add_argument('-tosql', '--tosql', action='store_true')
-    parser.add_argument('-tocsv', '--tocsv', action='store_true')
-    args = parser.parse_args()
-
-    # pout -not, ajouter les None pour ce qu'on ne scrape pas
-
-    # TODO put tests in a function
-
-    # TODO add test: if directory_path does not exist + implement functionality
-
-    # TODO il faut rentrer directory_path seulement si on met -tosql ou -csv
-
     if not args.page_start.isdigit() or not args.page_stop.isdigit():
         print(f'input must be digit')
         sys.exit(1)
@@ -119,26 +99,51 @@ def my_parser():
         print("The starting page must be lower than the last page")
         sys.exit(1)
 
-    print(f"scraping freelancer.com/jobs from page {args.page_start} to page {args.page_stop} ")
+    # TODO add test: if directory_path does not exist
+
+
+def my_parser():
+    """
+    parses the arguments from the command line
+    User must input the pages range she wants to scrape (page_start and page_stop).
+    If the user does not want details on the projects (i.e. collect what the function get_project returns) then
+    she must add -not in the console command.
+    User can choose to export to csv file or to sql database (format .db)
+    """
+
+    # design parser
+    parser = argparse.ArgumentParser(epilog=textwrap.dedent('''\
+         additional information:
+             If neither -tocsv nor -csv are specified, the scraper does not export the data to any file
+         '''))
+    parser.add_argument('page_start')
+    parser.add_argument('page_stop')
+    parser.add_argument('directory_path')
+    parser.add_argument('-not', '--no_scrape_all', action='store_true',
+                        help="collect titles, urls and number of days left to bid only")
+    parser.add_argument('-tosql', '--tosql', action='store_true', help="export to freelancer.db ")
+    parser.add_argument('-tocsv', '--tocsv', action='store_true', help="export to freelancer.csv ")
+    args = parser.parse_args()
+
+    # test validity of arguments
+    test_valid_arguments(args)
+
     if args.no_scrape_all:
         run_get_project = False
     else:
         run_get_project = True
 
+    # scrape
+    print(f"scraping freelancer.com/jobs from page {args.page_start} to page {args.page_stop} ")
     page2page(args.page_start, args.page_stop)
     dict_merged = web_scraping(run_get_project)
 
+    # export data
     if args.tosql:
         create_sql(dict_merged, args.directory_path)
-        print("Output extracted in the freelancer.db database.")
-        # TODO give instructions how to open it
+        print(f"Output extracted in the freelancer.db database in the directory {args.directory_path}.")
 
     if args.tocsv:
+        dict_merged = cleaner(dict_merged)
         export_to_csv(dict_merged, args.directory_path)
-        print("Data exported to file freelancer.csv")
-
-
-if __name__ == "__main__":
-    my_parser()
-    # dict_merged = web_scraping(run_get_project=True)
-    # export_to_csv(dict_merged)
+        print(f"Data exported to file freelancer.csv in the directory {args.directory_path}")
