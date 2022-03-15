@@ -98,6 +98,21 @@ BudgetSet        Skill            Verification
 ```
 
 
+## Database Design
+See the Entity Relationship Diagram (ERD) in the folder.
+Tables:
+* Job - information about title, days left to bid, job description, url
+* BudgetSet - one to one relationship between a job and a budget set
+* BudgetInfo - info about the currency, per hour or not and min-max range of the budget
+* Bidders - a one to many relationship between a job and the bidders
+* BidderInfo - information on the bidder : url, rating and name
+* CompetitionSet - a one to many (one?) relationship between a job and a competition
+* Competition - information about the competition: average bid, currency, bid type and number of competitors
+* SkillSet - a one to one relationship between a job and a skill set
+* Skill - information about each skill (name)
+* VerificationSet: a one to one relationship between a job and a verification set
+* Verification : Boolean values : email, deposit and 
+
 
 ###### Future usage
 Empty.

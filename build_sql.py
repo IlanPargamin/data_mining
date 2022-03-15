@@ -8,6 +8,7 @@ from flask_sqlalchemy import SQLAlchemy
 from cleaner import cleaner
 
 # TODO write README - explain each table + design database table
+# TODO do not create database if already exists
 
 
 def create_sql(dict_merged, directory_path):
@@ -95,7 +96,8 @@ def create_sql(dict_merged, directory_path):
         # Initialize the relationship
         verification_set = db.relationship('VerificationSet', backref=db.backref('Verification', lazy=True))
 
-    # create database
+    # create database if does not exist
+    # TODO add condition if database already exists -> update it
     db.create_all()
 
     # insert values from dict_merged
