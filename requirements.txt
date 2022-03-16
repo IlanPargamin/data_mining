@@ -1,0 +1,7 @@
+requests
+pandas
+beautifulsoup4
+grequests
+pymysql
+flask
+flask_sqlalchemy
