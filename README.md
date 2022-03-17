@@ -35,76 +35,49 @@ pip install -r requirements.txt
 You can run the scraper file web_scraping.py in the command line. 
 
 ```bash
-usage: web_scraping.py [-h] [-not] [-tosql] [-tocsv]
-                       page_start page_stop directory_path
+usage: web_scraping.py [-h] [-not] [-tosql]
+                       page_start page_stop sql_username sql_password sql_host
 
 positional arguments:
-  page_start
-  page_stop
-  directory_path
+  page_start            Scraping will start from this page
+  page_stop             Scraping will stop at this page
+  sql_username          Your sql username (commonly 'root')
+  sql_password          Your sql password
+  sql_host              Your sql hostname (commonly 'localhost')
 
 optional arguments:
   -h, --help            show this help message and exit
   -not, --no_scrape_all
                         collect titles, urls and number of days left to bid
                         only
-  -tosql, --tosql       export to freelancer.db
-  -tocsv, --tocsv       export to freelancer.csv
+  -tosql, --tosql       export to freelancer sql database
 
-additional information: If neither -tocsv nor -csv are specified, the scraper
-does not export the data to any file
+additional information: the main url is "freelancer.com"
 ```
 
-The file takes three arguments: page_start, page_stop and directory_path. 
+The file takes five arguments: page_start, page_stop, and the three necessary SQL information (username, password and host). 
 
 There are hundreds of pages in the website. The user must specify which range she wants to scrape. 
 
-The directory_path is where the output file will be exported.
-
-The file gives three options:
+The file gives two options:
 * -not, --no_scrape_all : this allows to scrape data from the main page only, not from the sub-pages
 * -tosql, --tosql: export to freelancer.db
-* -tocsv, --tocsv: export to freelancer.csv
 
-For example, if user wants to get  data from the main page and the sub-pages, from page 1 to 5, and export in a csv file in the directory whose path is "directory_path" she must write the following command:
-```bash
-python3 web_scraping.py -tocsv 1 5 directory_path
-```
 
-For example, if user wants to get data from the main page only, from page 1 only, and export it to a db file (database) she must write the following command:
+For example, if user wants to get data from page 1 only, and export it to a sql database (freelancer) she must write the following command:
 ```bash
-python3 web_scraping.py -not -tosql 1 1 directory_path
+python3 web_scraping.py -tosql 1 1 username password localhost
 ```
 
 ## Access to db database
-In the terminal, write the command:
-```bash
-sqlite3
-```
-and 
-```bash
-.open freelancer.db
-```
-
-To check that the database exists, write
-```bash
-.tables
-```
-The output should look like:
-
-```bash
-BudgetInfo       Job              SkillSet         VerificationSet
-BudgetSet        Skill            Verification
-```
+From the terminal, or MySQLWorkbench or other.
 
 
 ## Database Design
 See the Entity Relationship Diagram (ERD) in the folder.
 Tables:
 * Job - information about title, days left to bid, job description, url
-* BudgetSet - one to one relationship between a job and a budget set
-* BudgetInfo - info about the currency, per hour or not and min-max range of the budget
-* Bidders - a one to many relationship between a job and the bidders
+* Budget - info about the currency, per hour or not and min-max range of the budget
 * BidderInfo - information on the bidder : url, rating and name
 * CompetitionSet - a one to many (one?) relationship between a job and a competition
 * Competition - information about the competition: average bid, currency, bid type and number of competitors

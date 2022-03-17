@@ -1,5 +1,22 @@
 """
-main file
+usage: web_scraping.py [-h] [-not] [-tosql]
+                       page_start page_stop sql_username sql_password sql_host
+
+positional arguments:
+  page_start            Scraping will start from this page
+  page_stop             Scraping will stop at this page
+  sql_username          Your sql username (commonly 'root')
+  sql_password          Your sql password
+  sql_host              Your sql hostname (commonly 'localhost')
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -not, --no_scrape_all
+                        collect titles, urls and number of days left to bid
+                        only
+  -tosql, --tosql       export to freelancer sql database
+
+additional information: The main url is "freelancer.com"
 """
 
 from get_main import get_main
@@ -103,15 +120,12 @@ def test_valid_arguments(args):
 def my_parser():
     """
     parses the arguments from the command line
-    User must input the pages range she wants to scrape (page_start and page_stop).
-    If the user does not want details on the projects (i.e. collect what the function get_project returns) then
-    she must add -not in the console command.
     """
 
     # design parser
     parser = argparse.ArgumentParser(epilog=textwrap.dedent('''\
          additional information:
-             All the arguments must be valid!
+             The main url is "freelancer.com"
          '''))
     parser.add_argument('page_start', help="Scraping will start from this page")
     parser.add_argument('page_stop', help="Scraping will stop at this page")
