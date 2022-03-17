@@ -20,7 +20,6 @@ The scraper collects the following data:
 - list of bidders:
 -    * rating
 -    * link to profile
->>>>>>> ilan_branch
 
 
 ## Installation
@@ -58,7 +57,7 @@ The file takes five arguments: page_start, page_stop, and the three necessary SQ
 There are hundreds of pages in the website. The user must specify which range she wants to scrape. 
 
 The file gives one option:
-* -tosql, --tosql: export to freelancer.db
+* -tosql, --tosql: export to freelancer sql database
 
 
 For example, if user wants to get data from page 1 only, and export it to a sql database (freelancer) she must write the following command:
@@ -66,7 +65,7 @@ For example, if user wants to get data from page 1 only, and export it to a sql 
 python3 web_scraping.py -tosql 1 1 username password localhost
 ```
 
-## Access to db database
+## Access to the sql database
 From the terminal, or MySQLWorkbench or other.
 
 
@@ -90,7 +89,6 @@ Empty.
 There is no general rule. The data is clean.
 
 We identified, for bids and budget, the currency, the type of payment (per hour or fixed range) and the amount.
->>>>>>> ilan_branch
 
 ## Project status
 This is a work in progress.
