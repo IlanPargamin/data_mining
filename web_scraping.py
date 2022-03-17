@@ -1,6 +1,5 @@
 """
 main file
-To choose the range of the pages to scrape, you can modify the global variables in the file globals.py
 """
 
 from get_main import get_main
@@ -69,22 +68,23 @@ def web_scraping(run_get_project=True):
     """
     dicts_main = get_main()
     if run_get_project:
-        print(f"including project pages")
+        print(f"Including project pages")
         dicts_projects = get_project(get_urls(dicts_main))
         merged_dic = join_lists_of_dicts(dicts_main, dicts_projects)
         return merged_dic
     else:
-        print(f"main page only")
+        print(f"Main page only")
         return dicts_main
 
 
-def page2page(page_start, page_stop):
+def modify_globals(page_start, page_stop, sql_username, sql_password, sql_host):
     """
     modify our globals by printing the terminal arguments in the file globals.py
     """
     file_path = 'globals.py'
     with open(file_path, 'w') as f:
-        f.write(f"""MAIN_URL = 'https://www.freelancer.com'\nPAGE_START = {page_start}\nPAGE_STOP = {page_stop}""")
+        f.write(f"""MAIN_URL = 'https://www.freelancer.com'\nPAGE_START = {page_start}\nPAGE_STOP = {page_stop}\
+\nUSERNAME = \'{sql_username}\'\nPASSWORD = \'{sql_password}\'\nHOST = \'{sql_host}\'""")
 
 
 def test_valid_arguments(args):
@@ -99,8 +99,6 @@ def test_valid_arguments(args):
         print("The starting page must be lower than the last page")
         sys.exit(1)
 
-    # TODO add test: if directory_path does not exist
-
 
 def my_parser():
     """
@@ -108,21 +106,21 @@ def my_parser():
     User must input the pages range she wants to scrape (page_start and page_stop).
     If the user does not want details on the projects (i.e. collect what the function get_project returns) then
     she must add -not in the console command.
-    User can choose to export to csv file or to sql database (format .db)
     """
 
     # design parser
     parser = argparse.ArgumentParser(epilog=textwrap.dedent('''\
          additional information:
-             If neither -tocsv nor -csv are specified, the scraper does not export the data to any file
+             All the arguments must be valid!
          '''))
-    parser.add_argument('page_start')
-    parser.add_argument('page_stop')
-    parser.add_argument('directory_path')
+    parser.add_argument('page_start', help="Scraping will start from this page")
+    parser.add_argument('page_stop', help="Scraping will stop at this page")
+    parser.add_argument('sql_username', help="Your sql username (commonly 'root')")
+    parser.add_argument('sql_password', help="Your sql password")
+    parser.add_argument('sql_host', help="Your sql hostname (commonly 'localhost')")
     parser.add_argument('-not', '--no_scrape_all', action='store_true',
                         help="collect titles, urls and number of days left to bid only")
-    parser.add_argument('-tosql', '--tosql', action='store_true', help="export to freelancer.db ")
-    parser.add_argument('-tocsv', '--tocsv', action='store_true', help="export to freelancer.csv ")
+    parser.add_argument('-tosql', '--tosql', action='store_true', help="export to freelancer sql database ")
     args = parser.parse_args()
 
     # test validity of arguments
@@ -135,18 +133,13 @@ def my_parser():
 
     # scrape
     print(f"scraping freelancer.com/jobs from page {args.page_start} to page {args.page_stop} ")
-    page2page(args.page_start, args.page_stop)
+    modify_globals(args.page_start, args.page_stop, args.sql_username, args.sql_password, args.sql_host)
     dict_merged = web_scraping(run_get_project)
 
     # export data
     if args.tosql:
-        create_sql(dict_merged, args.directory_path)
-        print(f"Output extracted in the freelancer.db database in the directory {args.directory_path}.")
-
-    if args.tocsv:
-        dict_merged = cleaner(dict_merged)
-        export_to_csv(dict_merged, args.directory_path)
-        print(f"Data exported to file freelancer.csv in the directory {args.directory_path}")
+        create_sql(dict_merged)
+        print(f"Output extracted in the freelancer sql database.")
 
 
 if __name__ == "__main__":

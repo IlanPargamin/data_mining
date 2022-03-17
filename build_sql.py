@@ -3,15 +3,20 @@ This file, imported in web_scraping, creates the sql database based on a list of
 from freelancer.com.
 """
 
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from cleaner import cleaner
+import sqlalchemy
+from cleaner import *
+import pymysql
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, backref, relationship
+from sqlalchemy import Column, String, Integer, Date, ForeignKey
+from sqlalchemy import create_engine
+import pymysql
+from globals import *
 
-# TODO write README - explain each table + design database table
-# TODO do not create database if already exists
+pymysql.install_as_MySQLdb()
 
 
-def create_sql(dict_merged, directory_path):
+def create_sql(dict_merged):
     """
     Given dict_merged, a list of dictionaries with the scraped data from freelancer.com, and a dicrectory path,
     the function creates a sql database freelancer.db in the given directory.
@@ -21,84 +26,66 @@ def create_sql(dict_merged, directory_path):
     dict_merged = cleaner(dict_merged)
 
     # initialize database
-    app = Flask(__name__)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////' + directory_path + '/freelancer.db'
-    db = SQLAlchemy(app)
-    db.init_app(app)
+    username = USERNAME
+    password = PASSWORD
+    host = HOST
+    port = 3306
+    DB_NAME = 'freelancer'
+
+    engine = sqlalchemy.create_engine(f'mysql://{username}:{password}@{host}')  # connect to server
+    engine.execute(f"DROP DATABASE {DB_NAME}")  # create db
+    engine.execute(f"CREATE DATABASE {DB_NAME}")  # create db
+    engine.execute(f"USE {DB_NAME}")
+
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    Base = declarative_base()
+    skill_catalogue = set()
 
     # create tables (each class is a table)
-    class Job(db.Model):
+    class Job(Base):
         __tablename__ = 'Job'
         # Initialize the Column
-        id = db.Column(db.Integer, nullable=False, primary_key=True)
-        title = db.Column(db.String(100), nullable=False)
-        days_left_to_bid = db.Column(db.Integer)
-        job_description = db.Column(db.String(100))
-        url = db.Column(db.String(100), nullable=False)
+        id = Column(Integer, nullable=False, primary_key=True)
+        title = Column(String(1000), nullable=False)
+        days_left_to_bid = Column(Integer)
+        job_description = Column(String(10000))
+        url = Column(String(1000), nullable=False)
 
-    class SkillSet(db.Model):
-        __tablename__ = 'SkillSet'
+        Skillset = relationship("SkillSet", back_populates="Job")
+        Budget = relationship("Budget", back_populates="Job")
+
+    class SkillSet(Base):
+        __tablename__ = 'Skillset'
         # Initialize the Column
-        id = db.Column(db.Integer, nullable=False, primary_key=True)
-        job_id = db.Column(db.Integer, db.ForeignKey('Job.id'), nullable=False)
-
+        id = Column(Integer, nullable=False, primary_key=True, autoincrement=True)
+        job_id = Column(Integer, ForeignKey('Job.id'))
+        skill_id = Column(Integer, ForeignKey('Skill.id'))
         # Initialize the relationship
-        job = db.relationship('Job', backref=db.backref('SkillSet', lazy=True))
+        Job = relationship("Job", back_populates="Skillset")
+        Skill = relationship("Skill", back_populates="Skillset")
 
-    class Skill(db.Model):
+    class Skill(Base):
         __tablename__ = 'Skill'
         # Initialize the Column
-        id = db.Column(db.Integer, nullable=False, primary_key=True)
-        skill_set_id = db.Column(db.Integer, db.ForeignKey('SkillSet.id'), nullable=False)
-        name = db.Column(db.String(100))
+        id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+        name = Column(String(100))
+        Skillset = relationship("SkillSet", back_populates="Skill")
 
-        # Initialize the relationship
-        skillset = db.relationship('SkillSet', backref=db.backref('Skill', lazy=True))
-
-    class BudgetSet(db.Model):
-        __tablename__ = 'BudgetSet'
+    class Budget(Base):
+        __tablename__ = 'Budget'
         # Initialize the Column
-        id = db.Column(db.Integer, nullable=False, primary_key=True)
-        job_id = db.Column(db.Integer, db.ForeignKey('Job.id'), nullable=False)
-
+        id = Column(Integer, nullable=False, primary_key=True, autoincrement=True)
+        job_id = Column(Integer, ForeignKey('Job.id'))
+        currency = Column(String(100))
+        per_hour = Column(String(100))
+        min = Column(Integer)
+        max = Column(Integer)
         # Initialize the relationship
-        job = db.relationship('Job', backref=db.backref('BudgetSet', lazy=True))
+        Job = relationship("Job", back_populates="Budget")
 
-    class BudgetInfo(db.Model):
-        __tablename__ = 'BudgetInfo'
-        # Initialize the Column
-        id = db.Column(db.Integer, nullable=False, primary_key=True)
-        budgets_id = db.Column(db.Integer, db.ForeignKey('BudgetSet.id'), nullable=False)
-        currency = db.Column(db.String(100))
-        per_hour = db.Column(db.String(100))
-        min = db.Column(db.Integer)
-        max = db.Column(db.Integer)
-
-        # Initialize the relationship
-        budget_set = db.relationship('BudgetSet', backref=db.backref('BudgetInfo', lazy=True))
-
-    class VerificationSet(db.Model):
-        __tablename__ = 'VerificationSet'
-        # Initialize the Column
-        id = db.Column(db.Integer, nullable=False, primary_key=True)
-        job_id = db.Column(db.Integer, db.ForeignKey('Job.id'), nullable=False)
-
-        # Initialize the relationship
-        job = db.relationship('Job', backref=db.backref('VerificationSet', lazy=True))
-
-    class Verification(db.Model):
-        __tablename__ = 'Verification'
-        # Initialize the Column (there should be 9 lines in this table
-        id = db.Column(db.Integer, nullable=False, primary_key=True)
-        verifications_id = db.Column(db.Integer, db.ForeignKey('VerificationSet.id'), nullable=False)
-        name = db.Column(db.String(100))
-
-        # Initialize the relationship
-        verification_set = db.relationship('VerificationSet', backref=db.backref('Verification', lazy=True))
-
-    # create database if does not exist
-    # TODO add condition if database already exists -> update it
-    db.create_all()
+    Base.metadata.create_all(engine)
 
     # insert values from dict_merged
     for a_dict in dict_merged:
@@ -107,40 +94,36 @@ def create_sql(dict_merged, directory_path):
                   days_left_to_bid=a_dict["days left to bid"],
                   job_description=a_dict["description"],
                   url=a_dict["url"])
-        db.session.add(job)
 
-        # budgets
-        budget_set = BudgetSet(job=job)
-        db.session.add(budget_set)
-
-        # budget
-        budget = BudgetInfo(budget_set=budget_set,
-                            currency=a_dict["currency"],
-                            per_hour=a_dict["per_hour"],
-                            min=a_dict["min_value"],
-                            max=a_dict["max_value"])
-        db.session.add(budget)
-
-        # skills
-        skill_set = SkillSet(job=job)
-        db.session.add(skill_set)
-
+        session.add(job)
+        if_stop = 1
         # add skill in catalogue
         for my_skill in [x.strip() for x in a_dict["skills"].split(',')]:
-            skill = Skill(skillset=skill_set,
-                          name=my_skill)
-            db.session.add(skill)
+            if any(x for x in skill_catalogue if x.name == my_skill):
+                skill = [x for x in skill_catalogue if x.name == my_skill]
+                skill_set = SkillSet(Job=job, Skill=skill[0])
+                session.add(skill_set)
+                if_stop += 1
+            if if_stop == 2:
+                session.commit()
+                session.close()
+                exit()
+            else:
+                skill = Skill(name=my_skill)
+                skill_catalogue.add(skill)
+                skill_set = SkillSet(Job=job, Skill=skill)
+                session.add(skill)
+                session.add(skill_set)
 
-        # verifications
-        verification_set = VerificationSet(job=job)
-        db.session.add(verification_set)
-
-        # add verification in catalogue
-        for my_verif in a_dict["verified_traits_list"]:
-            verification = Verification(verification_set=verification_set,
-                                        name=my_verif)
-            db.session.add(verification)
+        # budget
+        budget = Budget(Job=job,
+                        currency=a_dict["currency"],
+                        per_hour=a_dict["per_hour"],
+                        min=a_dict["min_value"],
+                        max=a_dict["max_value"])
+        session.add(budget)
 
     # Insert to the database
-    db.session.commit()
-
+    session.commit()
+    session.close()
+    print("Output extracted in the freelancer sql database.")
