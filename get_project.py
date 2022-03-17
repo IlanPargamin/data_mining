@@ -1,4 +1,5 @@
 import requests
+from globals import *
 from bs4 import BeautifulSoup
 
 REMOVE_WORD_BUDGET = 6
@@ -33,13 +34,13 @@ def get_verified_traits(soup):
     payment_verified = 'data-tooltip="Payment Verified"'
     made_a_deposit = 'data-tooltip="Made a Deposit"'
     verified_email = 'data-tooltip="Email Verified"'
-    verified_traits_list = []
+    verified_traits_list = [False, False, False]
     if verified_email in verified_traits:
-        verified_traits_list.append('E-mail Verified')
+        verified_traits_list[0] = True
     if payment_verified in verified_traits:
-        verified_traits_list.append('Payment Verified')
+        verified_traits_list[1] = True
     if made_a_deposit in verified_traits:
-        verified_traits_list.append('Made a Deposit')
+        verified_traits_list[2] = True
     return verified_traits_list
 
 
@@ -55,7 +56,7 @@ def get_competition_list(soup):
 
     competition_list = []
     for link, rating in zip(names, rating):
-        competition_list.append({'url': link.get('href'), 'rating': rating.get('data-star_rating')})
+        competition_list.append({'url': MAIN_URL+link.get('href'), 'rating': rating.get('data-star_rating')})
 
     # remove first worker from list, in freelancer first worker is a dummy.
     competition_list = competition_list[REMOVE_DUMMY_EMPLOY:]
