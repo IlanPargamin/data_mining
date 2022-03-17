@@ -16,7 +16,7 @@ def cleaner(dict_merged):
     dict_merged = clean_days_left(dict_merged)
     dict_merged = clean_skills(dict_merged)
     dict_merged = clean_description(dict_merged)
-    dict_merged = clean_verification(dict_merged)
+    #dict_merged = clean_verification(dict_merged)
     return dict_merged
 
 

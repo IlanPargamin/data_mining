@@ -11,9 +11,6 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -not, --no_scrape_all
-                        collect titles, urls and number of days left to bid
-                        only
   -tosql, --tosql       export to freelancer sql database
 
 additional information: The main url is "freelancer.com"
@@ -67,6 +64,7 @@ def join_lists_of_dicts(dict_list1, dict_list2):
 
 def export_to_csv(list_of_dicts, directory_path):
     """
+    NOT USED
     export a list of dictionaries to a csv file
     creates the file if it does not exist
     """
@@ -119,7 +117,7 @@ def test_valid_arguments(args):
 
 def my_parser():
     """
-    parses the arguments from the command line
+    parses the arguments from the command line and call the scraper
     """
 
     # design parser
@@ -132,23 +130,23 @@ def my_parser():
     parser.add_argument('sql_username', help="Your sql username (commonly 'root')")
     parser.add_argument('sql_password', help="Your sql password")
     parser.add_argument('sql_host', help="Your sql hostname (commonly 'localhost')")
-    parser.add_argument('-not', '--no_scrape_all', action='store_true',
-                        help="collect titles, urls and number of days left to bid only")
+    # parser.add_argument('-not', '--no_scrape_all', action='store_true',
+    #                     help="collect titles, urls and number of days left to bid only")
     parser.add_argument('-tosql', '--tosql', action='store_true', help="export to freelancer sql database ")
     args = parser.parse_args()
 
     # test validity of arguments
     test_valid_arguments(args)
 
-    if args.no_scrape_all:
-        run_get_project = False
-    else:
-        run_get_project = True
+    # if args.no_scrape_all:
+    #     run_get_project = False
+    # else:
+    #     run_get_project = True
 
     # scrape
     print(f"scraping freelancer.com/jobs from page {args.page_start} to page {args.page_stop} ")
     modify_globals(args.page_start, args.page_stop, args.sql_username, args.sql_password, args.sql_host)
-    dict_merged = web_scraping(run_get_project)
+    dict_merged = web_scraping(run_get_project=True)
 
     # export data
     if args.tosql:

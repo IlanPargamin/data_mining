@@ -47,9 +47,6 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -not, --no_scrape_all
-                        collect titles, urls and number of days left to bid
-                        only
   -tosql, --tosql       export to freelancer sql database
 
 additional information: the main url is "freelancer.com"
@@ -59,8 +56,7 @@ The file takes five arguments: page_start, page_stop, and the three necessary SQ
 
 There are hundreds of pages in the website. The user must specify which range she wants to scrape. 
 
-The file gives two options:
-* -not, --no_scrape_all : this allows to scrape data from the main page only, not from the sub-pages
+The file gives one option:
 * -tosql, --tosql: export to freelancer.db
 
 
@@ -78,20 +74,19 @@ See the Entity Relationship Diagram (ERD) in the folder.
 Tables:
 * Job - information about title, days left to bid, job description, url
 * Budget - info about the currency, per hour or not and min-max range of the budget
-* BidderInfo - information on the bidder : url, rating and name
-* CompetitionSet - a one to many (one?) relationship between a job and a competition
-* Competition - information about the competition: average bid, currency, bid type and number of competitors
-* SkillSet - a one to one relationship between a job and a skill set
+* CompetitionSet - a correspondence between a job and a competitor
+* Competition - information about the bidders: average url and rating
+* SkillSet - a correspondence between a job and skills
 * Skill - information about each skill (name)
-* VerificationSet: a one to one relationship between a job and a verification set
-* Verification : Boolean values : email, deposit and 
+* VerificationSet: a correspondence between a job and verifications
+* Verification : Boolean values : email, deposit and payment
 
 
 ###### Future usage
 Empty.
 
 ## Data cleaning process
-There is no general rule.
+There is no general rule. The data is clean.
 
 We identified, for bids and budget, the currency, the type of payment (per hour or fixed range) and the amount.
 

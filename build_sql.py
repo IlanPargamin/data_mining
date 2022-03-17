@@ -13,8 +13,7 @@ from sqlalchemy import create_engine
 import pymysql
 from globals import *
 from sqlalchemy import create_engine
-from sqlalchemy_utils import database_exists, create_database
-
+from sqlalchemy_utils.functions import database_exists
 pymysql.install_as_MySQLdb()
 
 
@@ -35,15 +34,19 @@ def create_sql(dict_merged):
 
     engine = sqlalchemy.create_engine(f'mysql://{username}:{password}@{host}')  # connect to server
 
-    if not database_exists(engine.url):
-        engine.execute(f"CREATE DATABASE {DB_NAME}")  # create db
+
+
+    engine.execute(f"CREATE DATABASE {DB_NAME}")  # create db
     engine.execute(f"USE {DB_NAME}")
 
+
+    # start session
     Session = sessionmaker(bind=engine)
     session = Session()
 
     Base = declarative_base()
 
+    # initialize sets for future use
     skill_catalogue = set()
     verification_catalogue = set()
     competition_catalogue = set()
@@ -66,6 +69,7 @@ def create_sql(dict_merged):
 
     class SkillSet(Base):
         __tablename__ = 'Skillset'
+
         # Initialize the Column
         id = Column(Integer, nullable=False, primary_key=True, autoincrement=True)
         job_id = Column(Integer, ForeignKey('Job.id'))
@@ -77,6 +81,7 @@ def create_sql(dict_merged):
 
     class Skill(Base):
         __tablename__ = 'Skill'
+
         # Initialize the Column
         id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
         name = Column(String(100))
@@ -84,6 +89,7 @@ def create_sql(dict_merged):
 
     class Budget(Base):
         __tablename__ = 'Budget'
+
         # Initialize the Column
         id = Column(Integer, nullable=False, primary_key=True, autoincrement=True)
         job_id = Column(Integer, ForeignKey('Job.id'))
@@ -91,11 +97,13 @@ def create_sql(dict_merged):
         per_hour = Column(String(100))
         min = Column(Integer)
         max = Column(Integer)
+
         # Initialize the relationship
         Job = relationship("Job", back_populates="Budget")
 
     class VerificationSet(Base):
         __tablename__ = 'VerificationSet'
+
         # Initialize the Column
         id = Column(Integer, nullable=False, primary_key=True, autoincrement=True)
         job_id = Column(Integer, ForeignKey('Job.id'), nullable=False)
@@ -107,6 +115,7 @@ def create_sql(dict_merged):
 
     class Verification(Base):
         __tablename__ = 'Verification'
+
         # Initialize the Column
         id = Column(Integer, nullable=False, primary_key=True, autoincrement=True)
         mail = Column(Boolean)
@@ -118,6 +127,7 @@ def create_sql(dict_merged):
 
     class CompetitionSet(Base):
         __tablename__ = 'CompetitionSet'
+
         # Initialize the Column
         id = Column(Integer, nullable=False, primary_key=True, autoincrement=True)
         job_id = Column(Integer, ForeignKey('Job.id'), nullable=False)
@@ -129,6 +139,7 @@ def create_sql(dict_merged):
 
     class Competition(Base):
         __tablename__ = 'Competition'
+
         # Initialize the Column (there should be 9 lines in this table
         id = Column(Integer, nullable=False, primary_key=True, autoincrement=True)
         url = Column(String(1000))
