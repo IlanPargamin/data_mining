@@ -102,12 +102,8 @@ def update_db(a_dict, url):
 
 
 def add_instances(a_dict, session, Job, SkillSet, Skill, Budget, VerificationSet, Verification, CompetitionSet,
-                  Competition):
+                  Competition, skill_catalogue, verification_catalogue, competition_catalogue):
     """given a dictionary instance, create a new instance in the SQL database"""
-    # initialize sets for future use
-    skill_catalogue = set()
-    verification_catalogue = set()
-    competition_catalogue = set()
 
     # job
     job = Job(title=a_dict["titles"],
@@ -116,18 +112,12 @@ def add_instances(a_dict, session, Job, SkillSet, Skill, Budget, VerificationSet
               url=a_dict["url"])
 
     session.add(job)
-    if_stop = 1
     # add skill in catalogue
     for my_skill in [x.strip() for x in a_dict["skills"].split(',')]:
         if any(x for x in skill_catalogue if x.name == my_skill):
             skill = [x for x in skill_catalogue if x.name == my_skill]
             skill_set = SkillSet(Job=job, Skill=skill[0])
             session.add(skill_set)
-            if_stop += 1
-        if if_stop == 2:
-            session.commit()
-            session.close()
-            exit()
         else:
             skill = Skill(name=my_skill)
             skill_catalogue.add(skill)
@@ -172,9 +162,10 @@ def add_instances(a_dict, session, Job, SkillSet, Skill, Budget, VerificationSet
         session.add(verification)
         session.add(verification_set)
 
-    # Insert to the database
-    session.commit()
-    session.close()
+
+
+
+    return skill_catalogue, verification_catalogue, competition_catalogue
 
 
 def create_sql(dict_merged):
@@ -204,7 +195,6 @@ def create_sql(dict_merged):
     session = Session()
 
     Base = declarative_base()
-
 
     # create tables (each class is a table)
     class Job(Base):
@@ -306,20 +296,37 @@ def create_sql(dict_merged):
     if not db_exist:
         Base.metadata.create_all(engine)
 
+    skill_catalogue = set()
+    verification_catalogue = set()
+    competition_catalogue = set()
+
     # insert values from dict_merged
     for a_dict in dict_merged:
-        if db_exist: # if  db existed, update if instance existed, create otherwise
+        if db_exist:  # if  db existed, update if instance existed, create otherwise
             # check if instance already exists
             instance_exist = instance_exists_url(a_dict["url"], "Job")
             if instance_exist:
                 update_db(a_dict, a_dict["url"])
             else:
-                add_instances(a_dict, session, Job, SkillSet, Skill, Budget, VerificationSet, Verification,
-                              CompetitionSet, Competition)
+                skill_catalogue, verification_catalogue, competition_catalogue = add_instances(a_dict, session, Job,
+                                                                                               SkillSet, Skill, Budget,
+                                                                                               VerificationSet,
+                                                                                               Verification,
+                                                                                               CompetitionSet,
+                                                                                               Competition,
+                                                                                               skill_catalogue,
+                                                                                               verification_catalogue,
+                                                                                               competition_catalogue)
         else:
-            add_instances(a_dict, session, Job, SkillSet, Skill, Budget, VerificationSet, Verification,
-                              CompetitionSet, Competition)
-
-
-
+            skill_catalogue, verification_catalogue, competition_catalogue = add_instances(a_dict, session, Job,
+                                                                                           SkillSet, Skill, Budget,
+                                                                                           VerificationSet,
+                                                                                           Verification,
+                                                                                           CompetitionSet, Competition,
+                                                                                           skill_catalogue,
+                                                                                           verification_catalogue,
+                                                                                           competition_catalogue)
+    # Insert to the database
+    session.commit()
+    session.close()
 
