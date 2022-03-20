@@ -40,7 +40,7 @@ def instance_exists_url(url, table):
                                  password=PASSWORD,
                                  cursorclass=pymysql.cursors.DictCursor)
     cursor = connection.cursor()  # get the cursor
-    cursor.execute(f"USE {DB_NAME}")
+    cursor.execute(f"USE freelancer")
     cursor.execute(f"SELECT url from {table};")
     my_list = cursor.fetchall()
     for a_dic in my_list:
@@ -62,8 +62,7 @@ def create_sql(dict_merged):
     username = USERNAME
     password = PASSWORD
     host = HOST
-    DB_NAME = 'freelancer'
-
+    DB_NAME = "freelancer"
     engine = sqlalchemy.create_engine(f'mysql://{username}:{password}@{host}')  # connect to server
 
     # create db if does not exist
@@ -181,7 +180,8 @@ def create_sql(dict_merged):
         # Initialize the relationship
         CompetitionSet = relationship("CompetitionSet", back_populates="Competition")
 
-    Base.metadata.create_all(engine)
+    if not exist:
+        Base.metadata.create_all(engine)
 
     # insert values from dict_merged
     for a_dict in dict_merged:
@@ -226,13 +226,13 @@ def create_sql(dict_merged):
                                                  cursorclass=pymysql.cursors.DictCursor)
                     cursor = connection.cursor()
                     cursor.execute(f"USE {DB_NAME}")
-                    cursor.execute(f"""INSERT INTO Competition (url, rating) VALUES ({my_url}, {my_rating});""")
+                    cursor.execute(f"""INSERT INTO Competition (url, rating) VALUES (\'{my_url}\', \'{my_rating}\');""")
                     cursor.execute(f"""SELECT id FROM Competition WHERE url = \'{my_url}\';""")
                     competitor_id = cursor.fetchone()['id']
 
                     # CompetitionSet
                     cursor.execute(
-                        f"""INSERT INTO CompetitionSet (job_id, Competition_id) VALUES ({job_id}, {competitor_id});""")
+                        f"""INSERT INTO CompetitionSet (job_id, Competition_id) VALUES (\'{job_id}\', \'{competitor_id}\');""")
 
 
         else:  # create new instances
