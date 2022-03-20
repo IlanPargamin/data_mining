@@ -17,9 +17,7 @@ additional information: The main url is "freelancer.com"
 """
 
 from get_main import get_main
-from get_urls import get_urls
 from get_project import get_project
-import logging
 from build_sql import create_sql
 from cleaner import cleaner
 import logging
@@ -74,6 +72,17 @@ def export_to_csv(list_of_dicts, directory_path):
         dict_writer = csv.DictWriter(output_file, keys)
         dict_writer.writeheader()
         dict_writer.writerows(list_of_dicts)
+
+
+def get_urls(list_of_dicts):
+    """
+    Given a list of dicts containing a key "url", returns the urls in a list.
+    Used in web_scraping
+    """
+    urls = []
+    for i in range(len(list_of_dicts)):
+        urls.append(list_of_dicts[i]['url'])
+    return urls
 
 
 def web_scraping(run_get_project=True):

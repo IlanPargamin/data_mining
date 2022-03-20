@@ -117,8 +117,3 @@ def fill_project_dict(description=None,
     return dict_of_project
 
 
-if __name__ == '__main__':
-    example_url = ['https://www.freelancer.com/projects/website-design/pink-sale-presale?w=f&ngsw-bypass=',
-                  'https://www.freelancer.com/projects/logo-design/logo-design-33071777?w=f&ngsw-bypass=']
-    get_project(example_url)
-    print(get_project(example_url))
