@@ -165,11 +165,67 @@ def add_instances(a_dict, session, Job, SkillSet, Skill, Budget, VerificationSet
     return skill_catalogue, verification_catalogue, competition_catalogue
 
 
+def get_skill_catalogue(Skill):
+    """get the existing skills from the sql database, to avoid duplicates"""
+    skill_catalogue = set()
+    connection = pymysql.connect(host=HOST,
+                                 user=USERNAME,
+                                 password=PASSWORD,
+                                 cursorclass=pymysql.cursors.DictCursor)
+    cursor = connection.cursor()  # get the cursor
+    cursor.execute(f"USE {DB_NAME}")
+    cursor.execute(f"SELECT name from Skill;")
+    skills_list_dict = cursor.fetchall()
+    for one_dict in skills_list_dict:
+        skill = Skill(name=one_dict['name'])
+        skill_catalogue.add(skill)
+    return skill_catalogue
+
+
+def get_verification_catalogue(Verification):
+    """get the existing verifications from the sql database to avoid duplicates"""
+    verification_catalogue = set()
+    connection = pymysql.connect(host=HOST,
+                                 user=USERNAME,
+                                 password=PASSWORD,
+                                 cursorclass=pymysql.cursors.DictCursor)
+    cursor = connection.cursor()  # get the cursor
+    cursor.execute(f"USE {DB_NAME}")
+    cursor.execute(f"SELECT mail, Payment, Deposit FROM Verification;")
+    verif_list_dict = cursor.fetchall()
+    for one_dict in verif_list_dict:
+        verification = Verification(mail=one_dict["mail"],
+                                    Payment=one_dict["Payment"],
+                                    Deposit=one_dict["Deposit"])
+        verification_catalogue.add(verification)
+    return verification_catalogue
+
+
+def get_competition_catalogue(Competition):
+    """get the existing competition lists from the sql database to avoid duplicates"""
+    competition_catalogue = set()
+    connection = pymysql.connect(host=HOST,
+                                 user=USERNAME,
+                                 password=PASSWORD,
+                                 cursorclass=pymysql.cursors.DictCursor)
+    cursor = connection.cursor()  # get the cursor
+    cursor.execute(f"USE {DB_NAME}")
+    cursor.execute(f"SELECT url, rating FROM Competition;")
+    compet_list_dict = cursor.fetchall()
+    for one_dict in compet_list_dict:
+        competition = Competition(url=one_dict["url"],
+                                  rating=one_dict["rating"])
+        competition_catalogue.add(competition)
+    return competition_catalogue
+
+
 def create_sql(dict_merged):
     """
     Given dict_merged, a list of dictionaries with the scraped data from freelancer.com,
     the function creates a sql database freelancer
     Each class is a table in the database.
+    Possibility to update the database if it already exists.
+    It updates the existing instances with new values, or adds new instances to the database.
     """
     # clean dictionaries
     dict_merged = cleaner(dict_merged)
@@ -293,14 +349,15 @@ def create_sql(dict_merged):
     if not db_exist:
         Base.metadata.create_all(engine)
 
-    skill_catalogue = set()
-    verification_catalogue = set()
-    competition_catalogue = set()
+    # Initialize sets - empty if database empty. Sets of class instances
+
+    verification_catalogue = get_verification_catalogue(Verification)
+    skill_catalogue = get_skill_catalogue(Skill)
+    competition_catalogue = get_competition_catalogue(Competition)
 
     # insert values from dict_merged
     for a_dict in dict_merged:
         if db_exist:  # if  db existed, update if instance existed, create otherwise
-            # check if instance already exists
             instance_exist = instance_exists_url(a_dict["url"], "Job")
             if instance_exist:
                 update_db(a_dict, a_dict["url"])
@@ -326,4 +383,3 @@ def create_sql(dict_merged):
     # Insert to the database
     session.commit()
     session.close()
-
