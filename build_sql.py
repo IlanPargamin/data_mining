@@ -162,9 +162,6 @@ def add_instances(a_dict, session, Job, SkillSet, Skill, Budget, VerificationSet
         session.add(verification)
         session.add(verification_set)
 
-
-
-
     return skill_catalogue, verification_catalogue, competition_catalogue
 
 
