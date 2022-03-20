@@ -16,6 +16,7 @@ from sqlalchemy import create_engine
 import pymysql.cursors
 
 pymysql.install_as_MySQLdb()
+DB_NAME = "freelancer"
 
 
 def database_exists(database):
@@ -50,7 +51,7 @@ def instance_exists_url(url, table):
 
 
 def update_db(a_dict, url):
-    """update days_left_to_bid and competition_list"""
+    """update days_left_to_bid and competition_list in the sql database"""
     connection = pymysql.connect(host=HOST,
                                  user=USERNAME,
                                  password=PASSWORD,
@@ -100,8 +101,9 @@ def update_db(a_dict, url):
             connection.commit()
 
 
-def add_instances(a_dict, session):
-    """create new instances"""
+def add_instances(a_dict, session, Job, SkillSet, Skill, Budget, VerificationSet, Verification, CompetitionSet,
+                  Competition):
+    """given a dictionary instance, create a new instance in the SQL database"""
     # initialize sets for future use
     skill_catalogue = set()
     verification_catalogue = set()
@@ -188,7 +190,6 @@ def create_sql(dict_merged):
     username = USERNAME
     password = PASSWORD
     host = HOST
-    DB_NAME = "freelancer"
     engine = sqlalchemy.create_engine(f'mysql://{username}:{password}@{host}')  # connect to server
 
     # create db if does not exist
@@ -313,9 +314,11 @@ def create_sql(dict_merged):
             if instance_exist:
                 update_db(a_dict, a_dict["url"])
             else:
-                add_instances(a_dict, session)
+                add_instances(a_dict, session, Job, SkillSet, Skill, Budget, VerificationSet, Verification,
+                              CompetitionSet, Competition)
         else:
-            add_instances(a_dict, session)
+            add_instances(a_dict, session, Job, SkillSet, Skill, Budget, VerificationSet, Verification,
+                              CompetitionSet, Competition)
 
 
 
