@@ -13,8 +13,40 @@ from sqlalchemy import create_engine
 import pymysql
 from globals import *
 from sqlalchemy import create_engine
-from sqlalchemy_utils.functions import database_exists
+import pymysql.cursors
+
 pymysql.install_as_MySQLdb()
+
+
+def database_exists(database):
+    """check if database exists"""
+    connection = pymysql.connect(host=HOST,
+                                 user=USERNAME,
+                                 password=PASSWORD,
+                                 cursorclass=pymysql.cursors.DictCursor)
+    cursor = connection.cursor()  # get the cursor
+    cursor.execute("SHOW DATABASES")
+    my_list = cursor.fetchall()
+    for a_dic in my_list:
+        if database in a_dic.values():
+            return True
+    return False
+
+
+def instance_exists_url(url, table):
+    """check if job already in database. We check with the url, which is unique"""
+    connection = pymysql.connect(host=HOST,
+                                 user=USERNAME,
+                                 password=PASSWORD,
+                                 cursorclass=pymysql.cursors.DictCursor)
+    cursor = connection.cursor()  # get the cursor
+    cursor.execute(f"USE {DB_NAME}")
+    cursor.execute(f"SELECT url from {table};")
+    my_list = cursor.fetchall()
+    for a_dic in my_list:
+        if url in a_dic.values():
+            return True
+    return False
 
 
 def create_sql(dict_merged):
@@ -34,11 +66,12 @@ def create_sql(dict_merged):
 
     engine = sqlalchemy.create_engine(f'mysql://{username}:{password}@{host}')  # connect to server
 
+    # create db if does not exist
+    exist = database_exists(DB_NAME)
+    if not exist:
+        engine.execute(f"CREATE DATABASE {DB_NAME}")  # create db
 
-
-    engine.execute(f"CREATE DATABASE {DB_NAME}")  # create db
     engine.execute(f"USE {DB_NAME}")
-
 
     # start session
     Session = sessionmaker(bind=engine)
@@ -152,67 +185,119 @@ def create_sql(dict_merged):
 
     # insert values from dict_merged
     for a_dict in dict_merged:
-        # job
-        job = Job(title=a_dict["titles"],
-                  days_left_to_bid=a_dict["days left to bid"],
-                  job_description=a_dict["description"],
-                  url=a_dict["url"])
 
-        session.add(job)
-        if_stop = 1
-        # add skill in catalogue
-        for my_skill in [x.strip() for x in a_dict["skills"].split(',')]:
-            if any(x for x in skill_catalogue if x.name == my_skill):
-                skill = [x for x in skill_catalogue if x.name == my_skill]
-                skill_set = SkillSet(Job=job, Skill=skill[0])
-                session.add(skill_set)
-                if_stop += 1
-            if if_stop == 2:
-                session.commit()
-                session.close()
-                exit()
+        # check if instance already exists
+        url = a_dict["url"]
+        exist = instance_exists_url(url, "Job")
+        if exist:
+            # update days_left_to_bid and competition_list
+            connection = pymysql.connect(host=HOST,
+                                         user=USERNAME,
+                                         password=PASSWORD,
+                                         cursorclass=pymysql.cursors.DictCursor)
+            cursor = connection.cursor()  # get the cursor
+            cursor.execute(f"USE {DB_NAME}")
+            # update days_left_to_bid
+            cursor.execute(f"UPDATE Job SET days_left_to_bid = {a_dict['days left to bid']} WHERE url = \'{url}\';")
+
+            # update Competition and CompetitionSet
+            # get job id
+            connection = pymysql.connect(host=HOST,
+                                         user=USERNAME,
+                                         password=PASSWORD,
+                                         cursorclass=pymysql.cursors.DictCursor)
+            cursor = connection.cursor()  # get the cursor
+            cursor.execute(f"USE {DB_NAME}")
+            cursor.execute(f"""SELECT id FROM Job WHERE url = \'{url}\';""")
+            job_id = cursor.fetchone()['id']
+
+            # Competition
+            urls = []
+            ratings = []
+            for my_dict in a_dict["competition_list"]:
+                urls.append(my_dict["url"])
+                ratings.append(my_dict["rating"])
+            # add if competitor url is not in the list
+            for my_url, my_rating in zip(urls, ratings):
+                if not instance_exists_url(my_url, "Competition"):
+                    connection = pymysql.connect(host=HOST,
+                                                 user=USERNAME,
+                                                 password=PASSWORD,
+                                                 cursorclass=pymysql.cursors.DictCursor)
+                    cursor = connection.cursor()
+                    cursor.execute(f"USE {DB_NAME}")
+                    cursor.execute(f"""INSERT INTO Competition (url, rating) VALUES ({my_url}, {my_rating});""")
+                    cursor.execute(f"""SELECT id FROM Competition WHERE url = \'{my_url}\';""")
+                    competitor_id = cursor.fetchone()['id']
+
+                    # CompetitionSet
+                    cursor.execute(
+                        f"""INSERT INTO CompetitionSet (job_id, Competition_id) VALUES ({job_id}, {competitor_id});""")
+
+
+        else:  # create new instances
+            # job
+            job = Job(title=a_dict["titles"],
+                      days_left_to_bid=a_dict["days left to bid"],
+                      job_description=a_dict["description"],
+                      url=a_dict["url"])
+
+            session.add(job)
+            if_stop = 1
+            # add skill in catalogue
+            for my_skill in [x.strip() for x in a_dict["skills"].split(',')]:
+                if any(x for x in skill_catalogue if x.name == my_skill):
+                    skill = [x for x in skill_catalogue if x.name == my_skill]
+                    skill_set = SkillSet(Job=job, Skill=skill[0])
+                    session.add(skill_set)
+                    if_stop += 1
+                if if_stop == 2:
+                    session.commit()
+                    session.close()
+                    exit()
+                else:
+                    skill = Skill(name=my_skill)
+                    skill_catalogue.add(skill)
+                    skill_set = SkillSet(Job=job, Skill=skill)
+                    session.add(skill)
+                    session.add(skill_set)
+
+            # budget
+            budget = Budget(Job=job,
+                            currency=a_dict["currency"],
+                            per_hour=a_dict["per_hour"],
+                            min=a_dict["min_value"],
+                            max=a_dict["max_value"])
+            session.add(budget)
+
+            # Competition
+            for my_comp in a_dict["competition_list"]:
+                if any(x for x in competition_catalogue if x.url == my_comp['url']):
+                    comp = [x for x in competition_catalogue if x.url == my_comp['url']]
+                    comp_set = CompetitionSet(Job=job, Competition=comp[0])
+                    session.add(comp_set)
+                else:
+                    comp = Competition(url=my_comp['url'], rating=my_comp['rating'])
+                    competition_catalogue.add(comp)
+                    comp_set = CompetitionSet(Job=job, Competition=comp)
+                    session.add(comp)
+                    session.add(comp_set)
+
+            # verification
+            if any(x for x in verification_catalogue if
+                   [x.mail, x.Payment, x.Deposit] == a_dict["verified_traits_list"]):
+                verification = [x for x in verification_catalogue if
+                                [x.mail, x.Payment, x.Deposit] == a_dict["verified_traits_list"]]
+                verification_set = VerificationSet(Job=job, Verification=verification[0])
+                session.add(verification_set)
             else:
-                skill = Skill(name=my_skill)
-                skill_catalogue.add(skill)
-                skill_set = SkillSet(Job=job, Skill=skill)
-                session.add(skill)
-                session.add(skill_set)
-
-        # budget
-        budget = Budget(Job=job,
-                        currency=a_dict["currency"],
-                        per_hour=a_dict["per_hour"],
-                        min=a_dict["min_value"],
-                        max=a_dict["max_value"])
-        session.add(budget)
-
-        # Competition
-        for my_comp in a_dict["competition_list"]:
-            if any(x for x in competition_catalogue if x.url == my_comp['url']):
-                comp = [x for x in competition_catalogue if x.url == my_comp['url']]
-                comp_set = CompetitionSet(Job=job, Competition=comp[0])
-                session.add(comp_set)
-            else:
-                comp = Competition(url=my_comp['url'], rating=my_comp['rating'])
-                competition_catalogue.add(comp)
-                comp_set = CompetitionSet(Job=job, Competition=comp)
-                session.add(comp)
-                session.add(comp_set)
-
-        # verification
-        if any(x for x in verification_catalogue if [x.mail, x.Payment, x.Deposit] == a_dict["verified_traits_list"]):
-            verification = [x for x in verification_catalogue if
-                            [x.mail, x.Payment, x.Deposit] == a_dict["verified_traits_list"]]
-            verification_set = VerificationSet(Job=job, Verification=verification[0])
-            session.add(verification_set)
-        else:
-            verification = Verification(mail=a_dict["verified_traits_list"][0],
-                                        Payment=a_dict["verified_traits_list"][1],
-                                        Deposit=a_dict["verified_traits_list"][2])
-            verification_set = VerificationSet(Job=job, Verification=verification)
-            verification_catalogue.add(verification)
-            session.add(verification)
-            session.add(verification_set)
+                verification = Verification(mail=a_dict["verified_traits_list"][0],
+                                            Payment=a_dict["verified_traits_list"][1],
+                                            Deposit=a_dict["verified_traits_list"][2])
+                verification_set = VerificationSet(Job=job, Verification=verification)
+                verification_catalogue.add(verification)
+                session.add(verification)
+                session.add(verification_set)
 
     # Insert to the database
     session.commit()
