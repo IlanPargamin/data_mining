@@ -11,8 +11,6 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, backref, relationship
 from sqlalchemy import Column, String, Integer, Date, ForeignKey, Boolean, Float
 from sqlalchemy import create_engine
-import pymysql
-from sqlalchemy import create_engine
 import pymysql.cursors
 
 pymysql.install_as_MySQLdb()
@@ -176,9 +174,12 @@ def get_skill_catalogue(Skill):
     cursor.execute(f"USE {DB_NAME}")
     cursor.execute(f"SELECT name from Skill;")
     skills_list_dict = cursor.fetchall()
+    skill_names = []
     for one_dict in skills_list_dict:
         skill = Skill(name=one_dict['name'])
-        skill_catalogue.add(skill)
+        if skill.name not in skill_names:
+            skill_catalogue.add(skill)
+            skill_names.append(skill.name)
     return skill_catalogue
 
 
@@ -193,11 +194,14 @@ def get_verification_catalogue(Verification):
     cursor.execute(f"USE {DB_NAME}")
     cursor.execute(f"SELECT mail, Payment, Deposit FROM Verification;")
     verif_list_dict = cursor.fetchall()
+    verif_config = []
     for one_dict in verif_list_dict:
         verification = Verification(mail=one_dict["mail"],
                                     Payment=one_dict["Payment"],
                                     Deposit=one_dict["Deposit"])
-        verification_catalogue.add(verification)
+        if (verification.mail, verification.Payment, verification.Deposit) not in verif_config:
+            verification_catalogue.add(verification)
+            verif_config.append((verification.mail, verification.Payment, verification.Deposit))
     return verification_catalogue
 
 
@@ -212,10 +216,13 @@ def get_competition_catalogue(Competition):
     cursor.execute(f"USE {DB_NAME}")
     cursor.execute(f"SELECT url, rating FROM Competition;")
     compet_list_dict = cursor.fetchall()
+    compet_configs = []
     for one_dict in compet_list_dict:
         competition = Competition(url=one_dict["url"],
                                   rating=one_dict["rating"])
-        competition_catalogue.add(competition)
+        if (competition.url, competition.rating) not in compet_configs:
+            competition_catalogue.add(competition)
+            compet_configs.append((competition.url, competition.rating))
     return competition_catalogue
 
 
@@ -351,9 +358,9 @@ def create_sql(dict_merged):
 
     # Initialize sets - empty if database empty. Sets of class instances
 
-    verification_catalogue = get_verification_catalogue(Verification)
-    skill_catalogue = get_skill_catalogue(Skill)
-    competition_catalogue = get_competition_catalogue(Competition)
+    verification_catalogue  = get_verification_catalogue(Verification)
+    skill_catalogue         = get_skill_catalogue(Skill)
+    competition_catalogue   = get_competition_catalogue(Competition)
 
     # insert values from dict_merged
     for a_dict in dict_merged:
