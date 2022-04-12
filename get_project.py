@@ -1,25 +1,42 @@
 import requests
 from globals import *
 from bs4 import BeautifulSoup
+from time import sleep
+
+# import grequests
 
 REMOVE_WORD_BUDGET = 6
 REMOVE_WORD_SKILLS = 8
 REMOVE_DUMMY_EMPLOY = 1
 
 
-def get_project(list_of_projects):
+def get_project(urls):
     """
     This function receives a list of urls and returns a list of dictionaries containing scraped information on every link
     :param list_of_projects:
     :return: list_of_dict
     """
     list_of_dict = list()
-    for url in list_of_projects:
+
+    # rs = (grequests.get(u) for u in urls)
+    # responses = grequests.map(rs)
+    # #soups = [BeautifulSoup(response.content, 'html.parser') for response in responses]
+    # soups = []
+    # for res in responses:
+    #     try:
+    #         soups.append(BeautifulSoup(res.content, 'html.parser'))
+    #     except AttributeError:
+    #         soups.append([])
+
+    # len(soups), len(urls)
+    # for url, soup in zip(urls, soups):
+    for url in urls:
         page = requests.get(url)
         soup = BeautifulSoup(page.content, "html.parser")
         project_dict = get_project_dict(soup)
         project_dict['url'] = url
         list_of_dict.append(project_dict)
+        # sleep(2)
     return list_of_dict
 
 
@@ -56,7 +73,7 @@ def get_competition_list(soup):
 
     competition_list = []
     for link, rating in zip(names, rating):
-        competition_list.append({'url': MAIN_URL+link.get('href'), 'rating': rating.get('data-star_rating')})
+        competition_list.append({'url': MAIN_URL + link.get('href'), 'rating': rating.get('data-star_rating')})
 
     # remove first worker from list, in freelancer first worker is a dummy.
     competition_list = competition_list[REMOVE_DUMMY_EMPLOY:]
@@ -115,5 +132,3 @@ def fill_project_dict(description=None,
                        'budget': budget, 'verified_traits_list': verified_traits_list,
                        'competition_sum': competition_sum, 'competition_list': competition_list}
     return dict_of_project
-
-
