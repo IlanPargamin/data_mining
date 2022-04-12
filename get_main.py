@@ -18,7 +18,12 @@ def get_main():
     Corresponds to the main function of the file.
     Careful: 'main' corresponds to the main page of the website 'freelancer.com/jobs'.
     """
-    return scrape_main_page(get_main_html(), title=True, days_left=True, job_desc=False, tags=False, bid=False)
+    return scrape_main_page(get_main_html(),
+                            title=True,
+                            days_left=True,
+                            job_desc=False,
+                            tags=False,
+                            bid=False)
 
 
 def get_main_html(use_grequest=True):
