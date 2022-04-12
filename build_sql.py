@@ -16,6 +16,7 @@ import os
 import io
 import pathlib
 import json
+from api_related_skills import *
 
 pymysql.install_as_MySQLdb()
 DB_NAME = "freelancer"
@@ -110,6 +111,19 @@ def update_db(a_dict, competition_catalogue):
     return competition_catalogue
 
 
+def get_skill_description(skill, confidence_interval):
+    """
+    Given a skill name (string), returns a description of the skill using the Emsi api
+    """
+    access_token = create_access_token(my_client_id, my_client_secret, my_scope)
+
+    results = get_skill_emsi(skill, confidence_interval, access_token)
+    if results.shape[0] == 0:
+        return ''
+    else:
+        return descriptions.append(results['skill.description'].tolist()[0])
+
+
 def add_skill(a_dict, skill_catalogue):
     """
     given an observation contained in a dictionary,  update the tables Skill and SkillSet
@@ -133,9 +147,12 @@ def add_skill(a_dict, skill_catalogue):
 
         if not check:
             # insert in sql db Skill table
+            description = get_skill_description(skill, confidence_interval)
+
             cursor.execute(f"""
-            INSERT INTO {table} (name) 
-            VALUES (\'{my_skill}\');""")
+            INSERT INTO {table} (name, description) 
+            VALUES (\'{my_skill}\', \'{description}\');""")
+
             connection.commit()
 
         # get id of existing skill
@@ -336,6 +353,7 @@ def create_tables(Base):
         # Initialize the Column
         id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
         name = Column(String(100))
+        description = Column(String(10000))
         Skillset = relationship("SkillSet", back_populates="Skill")
 
     class Budget(Base):
