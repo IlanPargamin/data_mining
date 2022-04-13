@@ -17,8 +17,7 @@ def get_catalogues():
     """
     extracts skill_catalogue from the file catalogues.json
     """
-    # path = str(pathlib.Path(__file__).parent.resolve())
-    path = '/Users/ilanpargamin/Desktop/ITC/core/data_mining_project'
+    path = str(pathlib.Path(__file__).parent.resolve())
     with open(path + "/catalogues.json", "r") as read_file:
         catalogues_att = json.load(read_file)
 
@@ -86,8 +85,8 @@ def levenshtein(seq1, seq2):
 
 def get_info():
     """
-    Loads the skills from our json file catalogues.json, returns the descriptions and the names of the associated skills
-    from the emsi database
+    Loads the skills from our json file catalogues.json, send query to the API emsi, returns a pandas dataframe with
+    the api response
     """
     access_token = create_access_token(my_client_id, my_client_secret, my_scope)
     skill_catalogue = get_catalogues()
@@ -107,7 +106,6 @@ def skills_corr():
     """
     skill_catalogue = get_catalogues()
     skills_df = get_info()
-    # ATTENTION : ne pas update ce qui existe déjà
 
     # big_no = ['Programming', 'Trading', '']
     corr_dict = {}
@@ -128,13 +126,13 @@ def skill_descriptions_to_sql():
     """
     corr_dict = skills_corr()
 
-    # clean descriptions (remove "")
+    # clean descriptions
     for skill_sql in corr_dict:
         skill_info = corr_dict[skill_sql]
         if skill_info[1]:
             skill_info[1] = skill_info[1].replace('\"', "")
             skill_info[1] = skill_info[1].replace('\'', "")
-            skill_info[0] = skill_info[1].replace('\'', "")
+            #skill_info[0] = skill_info[0].replace('\'', "")
 
     connection = pymysql.connect(host=HOST,
                                  user=USERNAME,
@@ -142,12 +140,6 @@ def skill_descriptions_to_sql():
                                  cursorclass=pymysql.cursors.DictCursor)
     cursor = connection.cursor()
     cursor.execute(f"USE freelancer")
-
-    # # create column
-    # cursor.execute("""
-    # ALTER TABLE Skill
-    # ADD COLUMN description VARCHAR(10000) AFTER name;
-    # """)
 
     for skill_sql in corr_dict:
         skill_info = corr_dict[skill_sql]
