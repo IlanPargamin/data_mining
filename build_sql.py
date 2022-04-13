@@ -18,10 +18,14 @@ import os
 import io
 import pathlib
 import json
-from api_related_skills import *
+import logging
 
 pymysql.install_as_MySQLdb()
 DB_NAME = "freelancer"
+
+
+#logger = logging.getLogger(__name__)
+from base_logger import logger
 
 
 def database_exists(database):
@@ -80,7 +84,7 @@ def get_job_id(url):
 
 
 def update_days_left(a_dict):
-    """given an observation contained in a dictionary, update teh value of days_left_to_bid"""
+    """given an observation contained in a dictionary, update the value of days_left_to_bid"""
     connection = pymysql.connect(host=HOST,
                                  user=USERNAME,
                                  password=PASSWORD,
@@ -304,7 +308,7 @@ def add_instances(a_dict,
     conversion_ratio = get_ratio_to_usd(a_dict["currency"]) if a_dict["currency"] else None
     budget = Budget(Job=job,
                     currency_original=a_dict["currency"],
-                    per_hour_usd=round(int(a_dict["per_hour"]) * conversion_ratio, 1) if a_dict["per_hour"] else None,
+                    per_hour_usd=a_dict["per_hour"] if a_dict["per_hour"] else None,
                     min_usd=round(int(a_dict["min_value"]) * conversion_ratio, 1) if a_dict["min_value"] else None,
                     max_usd=round(int(a_dict["max_value"]) * conversion_ratio, 1) if a_dict["max_value"] else None)
 
@@ -491,11 +495,12 @@ def create_sql(dict_merged):
 
     if not db_exist:
         Base.metadata.create_all(engine)
-
+        logger.info('Created SQL database freelancer')
         # clean catalogues.json
         path = str(pathlib.Path(__file__).parent.resolve())
         with open(path + '/catalogues.json', 'w') as fp:
             json.dump({}, fp)
+            logger.info('Created file catalogues.json')
 
     # if the db exists, the catalogues too. We load them:
     skill_catalogue, competition_catalogue, verification_catalogue = get_catalogues()
@@ -521,12 +526,16 @@ def create_sql(dict_merged):
                                                                                             skill_catalogue,
                                                                                             competition_catalogue,
                                                                                             verification_catalogue)
+    logger.info('added instances / updated instances to the SQL database freelancer')
 
     # save catalogues in json file (catalogues.json)
     save_json(skill_catalogue, competition_catalogue, verification_catalogue)
+    logger.info('saved catalogues in file catalogues.json')
 
     # add description to skills in table Skill
-    skill_descriptions_to_sql()
+    # skill_descriptions_to_sql()
+    logger.info('enriched the skill table with skill description using the EMSI API')
+    logger.info('enriched the budget table with dollar currency conversion using exchangerate API')
 
     # close session
     session.close()

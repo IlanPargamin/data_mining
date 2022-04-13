@@ -2,12 +2,19 @@ import requests
 from globals import *
 from bs4 import BeautifulSoup
 from time import sleep
+import logging
 
 # import grequests
 
 REMOVE_WORD_BUDGET = 6
 REMOVE_WORD_SKILLS = 8
 REMOVE_DUMMY_EMPLOY = 1
+
+
+
+
+#logger = logging.getLogger(__name__)
+from base_logger import logger
 
 
 def get_project(urls):
@@ -37,6 +44,8 @@ def get_project(urls):
         project_dict['url'] = url
         list_of_dict.append(project_dict)
         # sleep(2)
+    logger.info('projects pages successfully scraped')
+
     return list_of_dict
 
 

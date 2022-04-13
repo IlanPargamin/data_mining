@@ -11,6 +11,10 @@ import pandas as pd
 import re
 from globals import *
 import requests
+import logging
+
+
+from base_logger import logger
 
 
 def get_main():
@@ -40,6 +44,7 @@ def get_main_html(use_grequest=True):
 
     if use_grequest:
         rs = (grequests.get(u) for u in urls)
+        logger.info(f'requests successfully sent to https://www.freelancer.com/jobs/ ')
         responses = grequests.map(rs)
         return [BeautifulSoup(response.content, 'html.parser') for response in responses]
 
@@ -93,6 +98,7 @@ def scrape_main_page(soups, title=True, days_left=True, job_desc=False, tags=Fal
     for soup in soups:
         my_page = "page " + str(page)
         dict_out[my_page] = {}
+        logger.info(f'scraping from https://www.freelancer.com/jobs/ page {my_page}')
         page += 1
 
         # job titles
@@ -148,4 +154,5 @@ def scrape_main_page(soups, title=True, days_left=True, job_desc=False, tags=Fal
 
     # instead of one dictionary of lists, transform into a list of dictionaries
     data_main = build_dataframe(dict_out)
+    logger.info('main page (https://www.freelancer.com/jobs/) was successfully scraped')
     return pd.DataFrame(data_main).to_dict(orient="records")

@@ -25,25 +25,10 @@ import argparse
 import csv
 import sys
 import textwrap
+from datetime import datetime
 
 
-def setup_logger(name, log_file, level=logging.INFO):
-    """
-    To setup as many loggers as needed
-    """
-
-    handler = logging.FileHandler(log_file)
-    handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
-
-    a_logger = logging.getLogger(name)
-    a_logger.setLevel(level)
-    a_logger.addHandler(handler)
-
-    return a_logger
-
-
-# stdout = setup_logger('stdout', 'stdout.log')
-# TODO write log file
+from base_logger import logger
 
 
 def join_lists_of_dicts(dict_list1, dict_list2):
@@ -92,10 +77,13 @@ def web_scraping(run_get_project=True):
     If run_get_project=True, we run the function get_project and collect more detailed data on each project.
     """
     dicts_main = get_main()
+    logger.info('main page (https://www.freelancer.com/jobs/) was successfully scraped')
     if run_get_project:
         print(f"Including project pages")
         dicts_projects = get_project(get_urls(dicts_main))
+        logger.info('job offers pages were successfully scraped')
         merged_dic = join_lists_of_dicts(dicts_main, dicts_projects)
+        logger.info('Both scraped sources of data were merged into one dictionary')
         return merged_dic
     else:
         print(f"Main page only")
@@ -130,6 +118,7 @@ def my_parser():
     parses the arguments from the command line and call the scraper
     """
 
+    start_time = datetime.now()
     # design parser
     parser = argparse.ArgumentParser(epilog=textwrap.dedent('''\
          additional information:
@@ -147,6 +136,7 @@ def my_parser():
 
     # test validity of arguments
     test_valid_arguments(args)
+    logger.info('Parsed arguments are valid')
 
     # if args.no_scrape_all:
     #     run_get_project = False
@@ -156,12 +146,17 @@ def my_parser():
     # scrape
     print(f"scraping freelancer.com/jobs from page {args.page_start} to page {args.page_stop} ")
     modify_globals(args.page_start, args.page_stop, args.sql_username, args.sql_password, args.sql_host)
+    logger.info('The file globals.py was modified')
     dict_merged = web_scraping(run_get_project=True)
 
     # export data
     if args.tosql:
         create_sql(dict_merged)
         print(f"Output extracted in the freelancer sql database.")
+        end_time = datetime.now()
+        logger.info(f'Execution time: {end_time - start_time}')
+
+
 
 
 if __name__ == "__main__":
