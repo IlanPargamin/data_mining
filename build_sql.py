@@ -4,6 +4,8 @@ from freelancer.com.
 """
 from cleaner import *
 from globals import *
+from api_currency import *
+
 
 import sqlalchemy
 import pymysql
@@ -282,11 +284,14 @@ def add_instances(a_dict,
     skill_catalogue = add_skill(a_dict, skill_catalogue)
 
     # budget
+    # Get conversion ratio from original currency to USD
+    conversion_ratio = get_ratio_to_usd(a_dict["currency"]) if a_dict["currency"] else None
     budget = Budget(Job=job,
-                    currency=a_dict["currency"],
-                    per_hour=a_dict["per_hour"],
-                    min=a_dict["min_value"],
-                    max=a_dict["max_value"])
+                    currency_original=a_dict["currency"],
+                    per_hour_usd=round(int(a_dict["per_hour"])*conversion_ratio, 1) if a_dict["per_hour"] else None,
+                    min_usd=round(int(a_dict["min_value"])*conversion_ratio, 1) if a_dict["min_value"] else None,
+                    max_usd=round(int(a_dict["max_value"])*conversion_ratio, 1) if a_dict["max_value"] else None)
+
     session.add(budget)
     session.commit()
 
@@ -343,10 +348,10 @@ def create_tables(Base):
         # Initialize the Column
         id = Column(Integer, nullable=False, primary_key=True, autoincrement=True)
         job_id = Column(Integer, ForeignKey('Job.id'))
-        currency = Column(String(100))
-        per_hour = Column(String(100))
-        min = Column(Integer)
-        max = Column(Integer)
+        currency_original = Column(String(100))
+        per_hour_usd = Column(String(100))
+        min_usd = Column(Integer)
+        max_usd = Column(Integer)
 
         # Initialize the relationship
         Job = relationship("Job", back_populates="Budget")
@@ -489,6 +494,7 @@ def create_sql(dict_merged):
                                                                                                skill_catalogue,
                                                                                                competition_catalogue,
                                                                                                verification_catalogue)
+
         else:  # new database
             skill_catalogue, competition_catalogue, verification_catalogue, = add_instances(a_dict,
                                                                                             session,
@@ -497,6 +503,7 @@ def create_sql(dict_merged):
                                                                                             skill_catalogue,
                                                                                             competition_catalogue,
                                                                                             verification_catalogue)
+
 
     # save catalogues in json file (catalogues.json)
     save_json(skill_catalogue, competition_catalogue, verification_catalogue)
