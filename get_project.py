@@ -3,7 +3,7 @@ from globals import *
 from bs4 import BeautifulSoup
 from time import sleep
 
-#import grequests
+# import grequests
 
 REMOVE_WORD_BUDGET = 6
 REMOVE_WORD_SKILLS = 8
@@ -28,15 +28,15 @@ def get_project(urls):
     #     except AttributeError:
     #         soups.append([])
 
-    #len(soups), len(urls)
-    #for url, soup in zip(urls, soups):
+    # len(soups), len(urls)
+    # for url, soup in zip(urls, soups):
     for url in urls:
         page = requests.get(url)
         soup = BeautifulSoup(page.content, "html.parser")
         project_dict = get_project_dict(soup)
         project_dict['url'] = url
         list_of_dict.append(project_dict)
-        #sleep(2)
+        # sleep(2)
     return list_of_dict
 
 
@@ -73,7 +73,7 @@ def get_competition_list(soup):
 
     competition_list = []
     for link, rating in zip(names, rating):
-        competition_list.append({'url': MAIN_URL+link.get('href'), 'rating': rating.get('data-star_rating')})
+        competition_list.append({'url': MAIN_URL + link.get('href'), 'rating': rating.get('data-star_rating')})
 
     # remove first worker from list, in freelancer first worker is a dummy.
     competition_list = competition_list[REMOVE_DUMMY_EMPLOY:]
@@ -132,5 +132,3 @@ def fill_project_dict(description=None,
                        'budget': budget, 'verified_traits_list': verified_traits_list,
                        'competition_sum': competition_sum, 'competition_list': competition_list}
     return dict_of_project
-
-
