@@ -149,8 +149,3 @@ def scrape_main_page(soups, title=True, days_left=True, job_desc=False, tags=Fal
     # instead of one dictionary of lists, transform into a list of dictionaries
     data_main = build_dataframe(dict_out)
     return pd.DataFrame(data_main).to_dict(orient="records")
-
-
-if __name__ == "__main__":
-    x = get_main()
-    print()

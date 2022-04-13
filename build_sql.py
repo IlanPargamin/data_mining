@@ -147,11 +147,10 @@ def add_skill(a_dict, skill_catalogue):
 
         if not check:
             # insert in sql db Skill table
-            description = get_skill_description(skill, confidence_interval)
 
             cursor.execute(f"""
-            INSERT INTO {table} (name, description) 
-            VALUES (\'{my_skill}\', \'{description}\');""")
+            INSERT INTO {table} (name) 
+            VALUES (\'{my_skill}\');""")
 
             connection.commit()
 
@@ -521,6 +520,9 @@ def create_sql(dict_merged):
 
     # save catalogues in json file (catalogues.json)
     save_json(skill_catalogue, competition_catalogue, verification_catalogue)
+
+    # add description to skills in table Skill
+    skill_descriptions_to_sql()
 
     # close session
     session.close()
