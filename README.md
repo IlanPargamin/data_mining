@@ -7,7 +7,7 @@
 ## data collection
 The scraper collects the following data:
 1. main page : https://www.freelancer.com/jobs/
-- jot titles
+- job titles
 - time left to make a bid
  - job url
 2. job page : https://www.freelancer.com/projects/project_type/project_title-project_id 
@@ -20,6 +20,13 @@ The scraper collects the following data:
 - list of bidders:
 -    * rating
 -    * link to profile
+
+## API enrichment
+
+The scraper enriches the data using two APIs:
+- EMSI: gives a description of the required skills (used in table Skill)
+- exchangerate: converts the values of foreign currencies into USD (used in table Budget)
+
 
 
 ## Installation
