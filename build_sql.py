@@ -101,11 +101,8 @@ def update_db(a_dict, competition_catalogue):
 
     Used when job instance already exists
     """
-
     update_days_left(a_dict)
-
     competition_catalogue = add_competitor(a_dict, competition_catalogue)
-
     return competition_catalogue
 
 
@@ -143,7 +140,6 @@ def add_skill(a_dict, skill_catalogue):
 
         if not check:
             # insert in sql db Skill table
-
             cursor.execute(f"""
             INSERT INTO {table} (name) 
             VALUES (\'{my_skill}\');""")
@@ -318,7 +314,6 @@ def create_tables(Base):
     class Job(Base):
         __tablename__ = 'Job'
 
-        # Initialize the Column
         id = Column(Integer, nullable=False, primary_key=True)
         title = Column(String(1000), nullable=False)
         days_left_to_bid = Column(Integer)
@@ -333,19 +328,16 @@ def create_tables(Base):
     class SkillSet(Base):
         __tablename__ = 'Skillset'
 
-        # Initialize the Column
         id = Column(Integer, nullable=False, primary_key=True, autoincrement=True)
         job_id = Column(Integer, ForeignKey('Job.id'))
         skill_id = Column(Integer, ForeignKey('Skill.id'))
 
-        # Initialize the relationship
         Job = relationship("Job", back_populates="Skillset")
         Skill = relationship("Skill", back_populates="Skillset")
 
     class Skill(Base):
         __tablename__ = 'Skill'
 
-        # Initialize the Column
         id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
         name = Column(String(100))
         description = Column(String(10000))
@@ -354,7 +346,6 @@ def create_tables(Base):
     class Budget(Base):
         __tablename__ = 'Budget'
 
-        # Initialize the Column
         id = Column(Integer, nullable=False, primary_key=True, autoincrement=True)
         job_id = Column(Integer, ForeignKey('Job.id'))
         currency_original = Column(String(100))
@@ -363,54 +354,45 @@ def create_tables(Base):
         min_usd = Column(Integer)
         max_usd = Column(Integer)
 
-        # Initialize the relationship
         Job = relationship("Job", back_populates="Budget")
 
     class VerificationSet(Base):
         __tablename__ = 'VerificationSet'
 
-        # Initialize the Column
         id = Column(Integer, nullable=False, primary_key=True, autoincrement=True)
         job_id = Column(Integer, ForeignKey('Job.id'), nullable=False)
         verification_id = Column(Integer, ForeignKey('Verification.id'))
 
-        # Initialize the relationship
         Job = relationship("Job", back_populates="VerificationSet")
         Verification = relationship("Verification", back_populates="VerificationSet")
 
     class Verification(Base):
         __tablename__ = 'Verification'
 
-        # Initialize the Column
         id = Column(Integer, nullable=False, primary_key=True, autoincrement=True)
         mail = Column(Boolean)
         Payment = Column(Boolean)
         Deposit = Column(Boolean)
 
-        # Initialize the relationship
         VerificationSet = relationship("VerificationSet", back_populates="Verification")
 
     class CompetitionSet(Base):
         __tablename__ = 'CompetitionSet'
 
-        # Initialize the Column
         id = Column(Integer, nullable=False, primary_key=True, autoincrement=True)
         job_id = Column(Integer, ForeignKey('Job.id'), nullable=False)
         Competition_id = Column(Integer, ForeignKey('Competition.id'))
 
-        # Initialize the relationship
         Job = relationship("Job", back_populates="CompetitionSet")
         Competition = relationship("Competition", back_populates="CompetitionSet")
 
     class Competition(Base):
         __tablename__ = 'Competition'
 
-        # Initialize the Column (there should be 9 lines in this table
         id = Column(Integer, nullable=False, primary_key=True, autoincrement=True)
         url = Column(String(1000))
         rating = Column(Float)
 
-        # Initialize the relationship
         CompetitionSet = relationship("CompetitionSet", back_populates="Competition")
 
     return Job, SkillSet, Skill, Budget, VerificationSet, Verification, CompetitionSet, Competition
@@ -448,6 +430,7 @@ def save_json(skill_catalogue, competition_catalogue, verification_catalogue):
 
     with open(path + "/catalogues.json", "w") as write_file:
         json.dump(dict_json, write_file)
+    logger.info('saved catalogues in file catalogues.json')
 
 
 def insert_values(db_exist,
@@ -505,6 +488,16 @@ def db_initialization(engine, Base):
     return db_exist
 
 
+def enrich_api():
+    # add description to skills in table Skill via IPA
+    skill_descriptions_to_sql()
+    logger.info('enriched the skill table with skill description using the EMSI API')
+
+    # convert all currencies/values to USD
+    enrich_budget_currency()
+    logger.info('enriched the budget table with dollar currency conversion using exchangerate API')
+
+
 def create_sql(dict_merged):
     """
     Given dict_merged, a list of dictionaries with the scraped data from freelancer.com,
@@ -550,14 +543,8 @@ def create_sql(dict_merged):
 
     # save catalogues in json file (catalogues.json)
     save_json(skill_catalogue, competition_catalogue, verification_catalogue)
-    logger.info('saved catalogues in file catalogues.json')
 
-    # add description to skills in table Skill via IPA
-    skill_descriptions_to_sql()
-    logger.info('enriched the skill table with skill description using the EMSI API')
-
-    # convert all currencies/values to USD
-    enrich_budget_currency()
-    logger.info('enriched the budget table with dollar currency conversion using exchangerate API')
+    # enrich SKill and Budget with APIs
+    enrich_api()
 
     session.close()

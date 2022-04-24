@@ -91,11 +91,7 @@ def get_info():
     access_token = create_access_token(my_client_id, my_client_secret, my_scope)
     skill_catalogue = get_catalogues()
     confidence_interval = '0.6'
-
-    # turn skill_catalogue into one long string
     skills = ', '.join(skill_catalogue)
-
-    # send query and get response in pandas df
     return get_skill_emsi(skills, confidence_interval, access_token)
 
 
@@ -107,13 +103,10 @@ def skills_corr():
     skill_catalogue = get_catalogues()
     skills_df = get_info()
 
-    # big_no = ['Programming', 'Trading', '']
     corr_dict = {}
     for skill_sql in skill_catalogue:
         for skill_emsi in skills_df['skill.name'].tolist():
-            if (levenshtein(skill_sql, skill_emsi) < 2 or skill_sql in skill_emsi):  # and (skill_sql not in big_no):
-                # add related skills? in another table
-                # add description to table Skill in SQL
+            if levenshtein(skill_sql, skill_emsi) < 2 or skill_sql in skill_emsi:
                 name = skills_df[skills_df['skill.name'] == skill_emsi]['skill.name'].tolist()[0]
                 des = skills_df[skills_df['skill.name'] == skill_emsi]['skill.description'].tolist()[0]
                 corr_dict[skill_sql] = [name, des]
