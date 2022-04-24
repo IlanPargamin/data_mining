@@ -2,6 +2,6 @@ MAIN_URL = 'https://www.freelancer.com'
 PAGE_START = 1
 PAGE_STOP = 1
 USERNAME = 'root'
-PASSWORD = '1712541'
+PASSWORD = 'root'
 HOST = 'localhost'
 DB_NAME = 'freelancer'
