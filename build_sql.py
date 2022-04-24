@@ -6,7 +6,6 @@ from cleaner import *
 from globals import *
 from api_currency import *
 from api_related_skills import *
-
 import sqlalchemy
 import pymysql
 from sqlalchemy.ext.declarative import declarative_base
@@ -19,13 +18,9 @@ import io
 import pathlib
 import json
 import logging
+from base_logger import logger
 
 pymysql.install_as_MySQLdb()
-DB_NAME = "freelancer"
-
-
-#logger = logging.getLogger(__name__)
-from base_logger import logger
 
 
 def database_exists(database):
@@ -34,7 +29,7 @@ def database_exists(database):
                                  user=USERNAME,
                                  password=PASSWORD,
                                  cursorclass=pymysql.cursors.DictCursor)
-    cursor = connection.cursor()  # get the cursor
+    cursor = connection.cursor()
     cursor.execute("SHOW DATABASES")
     my_list = cursor.fetchall()
     for a_dic in my_list:
@@ -52,7 +47,7 @@ def instance_exists(table, inst, col='all', type='verification'):
                                  user=USERNAME,
                                  password=PASSWORD,
                                  cursorclass=pymysql.cursors.DictCursor)
-    cursor = connection.cursor()  # get the cursor
+    cursor = connection.cursor()
     cursor.execute(f"USE freelancer")
     cursor.execute(f"SELECT {col} from {table};")
     my_list = cursor.fetchall()
@@ -77,7 +72,7 @@ def get_job_id(url):
                                  user=USERNAME,
                                  password=PASSWORD,
                                  cursorclass=pymysql.cursors.DictCursor)
-    cursor = connection.cursor()  # get the cursor
+    cursor = connection.cursor()
     cursor.execute(f"USE {DB_NAME}")
     cursor.execute(f"""SELECT id FROM Job WHERE url = \'{url}\';""")
     return cursor.fetchone()['id']
@@ -92,7 +87,6 @@ def update_days_left(a_dict):
     cursor = connection.cursor()
     cursor.execute(f"USE {DB_NAME}")
 
-    # update days_left_to_bid
     cursor.execute(f"""
     UPDATE Job 
     SET days_left_to_bid = {a_dict['days left to bid']} 
@@ -108,10 +102,8 @@ def update_db(a_dict, competition_catalogue):
     Used when job instance already exists
     """
 
-    # update days_left_to_bid
     update_days_left(a_dict)
 
-    # update Competition and CompetitionSet tables and competition_catalogue
     competition_catalogue = add_competitor(a_dict, competition_catalogue)
 
     return competition_catalogue
@@ -136,7 +128,6 @@ def add_skill(a_dict, skill_catalogue):
     """
 
     table = 'Skill'
-    # get job id
     job_id = get_job_id(a_dict['url'])
 
     connection = pymysql.connect(host=HOST,
@@ -148,7 +139,6 @@ def add_skill(a_dict, skill_catalogue):
 
     for my_skill in [x.strip() for x in a_dict["skills"].split(',')]:
 
-        # check if skill in catalogue
         check = instance_exists(table, my_skill, col='name', type='skill')
 
         if not check:
@@ -174,7 +164,6 @@ def add_skill(a_dict, skill_catalogue):
         connection.commit()
 
         if not check:
-            # update skill_catalogue
             skill_catalogue.append(my_skill)
 
     return skill_catalogue
@@ -209,7 +198,7 @@ def add_competitor(a_dict, competitor_urls):
             VALUES (\'{sub_dict["url"]}\', \'{sub_dict["rating"]}\');""")
             connection.commit()
 
-        # get id of existing competior
+        # get id of existing competitor
         cursor.execute(f"""
         SELECT id 
         FROM {table} 
@@ -235,6 +224,7 @@ def add_verification(a_dict, verification_catalogue):
     """
     my_verification = a_dict["verified_traits_list"]
     my_verification = list(map(lambda x: 1 if x else 0, my_verification))
+
     # check if verification triplet is in table Verification
     table = 'Verification'
     col = 'all'
@@ -297,20 +287,18 @@ def add_instances(a_dict,
               job_description=a_dict["description"],
               url=a_dict["url"])
 
-    session.add(job)  # check why there are duplicates
+    session.add(job)
     session.commit()
 
     # add skill in catalogue
     skill_catalogue = add_skill(a_dict, skill_catalogue)
 
     # budget
-    # Get conversion ratio from original currency to USD
-    conversion_ratio = get_ratio_to_usd(a_dict["currency"]) if a_dict["currency"] else None
     budget = Budget(Job=job,
                     currency_original=a_dict["currency"],
-                    per_hour_usd=a_dict["per_hour"] if a_dict["per_hour"] else None,
-                    min_usd=round(int(a_dict["min_value"]) * conversion_ratio, 1) if a_dict["min_value"] else None,
-                    max_usd=round(int(a_dict["max_value"]) * conversion_ratio, 1) if a_dict["max_value"] else None)
+                    per_hour=a_dict["per_hour"] if a_dict["per_hour"] else None,
+                    min_usd=a_dict["min_value"] if a_dict["min_value"] else None,
+                    max_usd=a_dict["max_value"] if a_dict["max_value"] else None)
 
     session.add(budget)
     session.commit()
@@ -370,7 +358,8 @@ def create_tables(Base):
         id = Column(Integer, nullable=False, primary_key=True, autoincrement=True)
         job_id = Column(Integer, ForeignKey('Job.id'))
         currency_original = Column(String(100))
-        per_hour_usd = Column(String(100))
+        currency = Column(String(100))
+        per_hour = Column(String(100))
         min_usd = Column(Integer)
         max_usd = Column(Integer)
 
@@ -461,7 +450,61 @@ def save_json(skill_catalogue, competition_catalogue, verification_catalogue):
         json.dump(dict_json, write_file)
 
 
-# TODO divide into subfunctions
+def insert_values(db_exist,
+                  a_dict,
+                  session,
+                  Job,
+                  Budget,
+                  skill_catalogue,
+                  competition_catalogue,
+                  verification_catalogue):
+    """
+    insert observation in sql db
+    """
+    if db_exist:
+        if instance_exists('Job', a_dict["url"], 'url', type='job'):
+            competition_catalogue = update_db(a_dict, competition_catalogue)
+        else:
+            skill_catalogue, competition_catalogue, verification_catalogue = add_instances(a_dict,
+                                                                                           session,
+                                                                                           Job,
+                                                                                           Budget,
+                                                                                           skill_catalogue,
+                                                                                           competition_catalogue,
+                                                                                           verification_catalogue)
+    else:
+        skill_catalogue, competition_catalogue, verification_catalogue, = add_instances(a_dict,
+                                                                                        session,
+                                                                                        Job,
+                                                                                        Budget,
+                                                                                        skill_catalogue,
+                                                                                        competition_catalogue,
+                                                                                        verification_catalogue)
+    return skill_catalogue, competition_catalogue, verification_catalogue
+
+
+def db_initialization(engine, Base):
+    """
+    If the data base does not exist, create it and clean the json file of catalogues
+    """
+
+    db_exist = database_exists(DB_NAME)
+    if not db_exist:
+        engine.execute(f"CREATE DATABASE {DB_NAME}")
+        engine.execute(f"USE {DB_NAME}")
+        Base.metadata.create_all(engine)
+        logger.info('Created SQL database freelancer')
+
+        # clean catalogues.json
+        path = str(pathlib.Path(__file__).parent.resolve())
+        with open(path + '/catalogues.json', 'w') as fp:
+            json.dump({}, fp)
+            logger.info('Created file catalogues.json')
+    else:
+        engine.execute(f"USE {DB_NAME}")
+    return db_exist
+
+
 def create_sql(dict_merged):
     """
     Given dict_merged, a list of dictionaries with the scraped data from freelancer.com,
@@ -475,16 +518,9 @@ def create_sql(dict_merged):
     # clean dictionaries
     dict_merged = cleaner(dict_merged)
 
-    # initialize database
+    # initialize engine
     engine = sqlalchemy.create_engine(f'mysql://{USERNAME}:{PASSWORD}@{HOST}')  # connect to server
 
-    # create db if does not exist, use the existing one otherwise
-    db_exist = database_exists(DB_NAME)
-    if not db_exist:
-        engine.execute(f"CREATE DATABASE {DB_NAME}")  # create db
-    engine.execute(f"USE {DB_NAME}")
-
-    # start session
     Session = sessionmaker(bind=engine)
     session = Session()
 
@@ -493,49 +529,35 @@ def create_sql(dict_merged):
     # create tables (each class is a table)
     Job, SkillSet, Skill, Budget, VerificationSet, Verification, CompetitionSet, Competition = create_tables(Base)
 
-    if not db_exist:
-        Base.metadata.create_all(engine)
-        logger.info('Created SQL database freelancer')
-        # clean catalogues.json
-        path = str(pathlib.Path(__file__).parent.resolve())
-        with open(path + '/catalogues.json', 'w') as fp:
-            json.dump({}, fp)
-            logger.info('Created file catalogues.json')
+    # create db if does not exist, use the existing one otherwise
+    db_exist = db_initialization(engine, Base)
 
     # if the db exists, the catalogues too. We load them:
     skill_catalogue, competition_catalogue, verification_catalogue = get_catalogues()
 
     # insert values from dict_merged
     for a_dict in dict_merged:
-        if db_exist:  # if  db existed, update if instance existed, create otherwise
-            if instance_exists('Job', a_dict["url"], 'url', type='job'):
-                competition_catalogue = update_db(a_dict, competition_catalogue)
-            else:
-                skill_catalogue, competition_catalogue, verification_catalogue = add_instances(a_dict,
-                                                                                               session,
-                                                                                               Job,
-                                                                                               Budget,
-                                                                                               skill_catalogue,
-                                                                                               competition_catalogue,
-                                                                                               verification_catalogue)
-        else:  # new database
-            skill_catalogue, competition_catalogue, verification_catalogue, = add_instances(a_dict,
-                                                                                            session,
-                                                                                            Job,
-                                                                                            Budget,
-                                                                                            skill_catalogue,
-                                                                                            competition_catalogue,
-                                                                                            verification_catalogue)
+        skill_catalogue, competition_catalogue, verification_catalogue = insert_values(db_exist,
+                                                                                       a_dict,
+                                                                                       session,
+                                                                                       Job,
+                                                                                       Budget,
+                                                                                       skill_catalogue,
+                                                                                       competition_catalogue,
+                                                                                       verification_catalogue)
+
     logger.info('added instances / updated instances to the SQL database freelancer')
 
     # save catalogues in json file (catalogues.json)
     save_json(skill_catalogue, competition_catalogue, verification_catalogue)
     logger.info('saved catalogues in file catalogues.json')
 
-    # add description to skills in table Skill
-    # skill_descriptions_to_sql()
+    # add description to skills in table Skill via IPA
+    skill_descriptions_to_sql()
     logger.info('enriched the skill table with skill description using the EMSI API')
+
+    # convert all currencies/values to USD
+    enrich_budget_currency()
     logger.info('enriched the budget table with dollar currency conversion using exchangerate API')
 
-    # close session
     session.close()

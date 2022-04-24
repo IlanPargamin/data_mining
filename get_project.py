@@ -3,18 +3,13 @@ from globals import *
 from bs4 import BeautifulSoup
 from time import sleep
 import logging
+from base_logger import logger
 
 # import grequests
 
 REMOVE_WORD_BUDGET = 6
 REMOVE_WORD_SKILLS = 8
 REMOVE_DUMMY_EMPLOY = 1
-
-
-
-
-#logger = logging.getLogger(__name__)
-from base_logger import logger
 
 
 def get_project(urls):

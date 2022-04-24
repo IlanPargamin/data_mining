@@ -132,7 +132,6 @@ def skill_descriptions_to_sql():
         if skill_info[1]:
             skill_info[1] = skill_info[1].replace('\"', "")
             skill_info[1] = skill_info[1].replace('\'', "")
-            #skill_info[0] = skill_info[0].replace('\'', "")
 
     connection = pymysql.connect(host=HOST,
                                  user=USERNAME,
@@ -143,7 +142,6 @@ def skill_descriptions_to_sql():
 
     for skill_sql in corr_dict:
         skill_info = corr_dict[skill_sql]
-        # long_name = skill_info[0]
         description = skill_info[1]
         cursor.execute(f"""
         UPDATE Skill SET description = \'{description}\' WHERE name = \'{skill_sql}\';""")

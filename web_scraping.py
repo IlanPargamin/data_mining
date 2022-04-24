@@ -26,8 +26,6 @@ import csv
 import sys
 import textwrap
 from datetime import datetime
-
-
 from base_logger import logger
 
 
@@ -44,19 +42,6 @@ def join_lists_of_dicts(dict_list1, dict_list2):
     for i in range(len(dict_list1)):
         dict_list1[i].update(dict_list2[i])
     return dict_list1
-
-
-def export_to_csv(list_of_dicts, directory_path):
-    """
-    NOT USED
-    export a list of dictionaries to a csv file
-    creates the file if it does not exist
-    """
-    keys = list_of_dicts[0].keys()
-    with open(directory_path + '/freelancer.csv', 'w+', newline='') as output_file:
-        dict_writer = csv.DictWriter(output_file, keys)
-        dict_writer.writeheader()
-        dict_writer.writerows(list_of_dicts)
 
 
 def get_urls(list_of_dicts):
@@ -97,7 +82,7 @@ def modify_globals(page_start, page_stop, sql_username, sql_password, sql_host):
     file_path = 'globals.py'
     with open(file_path, 'w') as f:
         f.write(f"""MAIN_URL = 'https://www.freelancer.com'\nPAGE_START = {page_start}\nPAGE_STOP = {page_stop}\
-\nUSERNAME = \'{sql_username}\'\nPASSWORD = \'{sql_password}\'\nHOST = \'{sql_host}\'""")
+\nUSERNAME = \'{sql_username}\'\nPASSWORD = \'{sql_password}\'\nHOST = \'{sql_host}\'\nDB_NAME = 'freelancer'""")
 
 
 def test_valid_arguments(args):
@@ -129,19 +114,12 @@ def my_parser():
     parser.add_argument('sql_username', help="Your sql username (commonly 'root')")
     parser.add_argument('sql_password', help="Your sql password")
     parser.add_argument('sql_host', help="Your sql hostname (commonly 'localhost')")
-    # parser.add_argument('-not', '--no_scrape_all', action='store_true',
-    #                     help="collect titles, urls and number of days left to bid only")
     parser.add_argument('-tosql', '--tosql', action='store_true', help="export to freelancer sql database ")
     args = parser.parse_args()
 
     # test validity of arguments
     test_valid_arguments(args)
     logger.info('Parsed arguments are valid')
-
-    # if args.no_scrape_all:
-    #     run_get_project = False
-    # else:
-    #     run_get_project = True
 
     # scrape
     print(f"scraping freelancer.com/jobs from page {args.page_start} to page {args.page_stop} ")
@@ -155,8 +133,6 @@ def my_parser():
         print(f"Output extracted in the freelancer sql database.")
         end_time = datetime.now()
         logger.info(f'Execution time: {end_time - start_time}')
-
-
 
 
 if __name__ == "__main__":
