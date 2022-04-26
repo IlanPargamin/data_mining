@@ -474,8 +474,8 @@ def db_initialization(engine, Base):
 
     db_empty = database_empty(DB_NAME)
     engine.execute(f"USE {DB_NAME}")
-    Base.metadata.create_all(engine)
     if db_empty:
+        Base.metadata.create_all(engine)
         # clean catalogues.json
         path = str(pathlib.Path(__file__).parent.resolve())
         with open(path + '/catalogues.json', 'w') as fp:
