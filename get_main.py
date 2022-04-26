@@ -12,8 +12,6 @@ import re
 from globals import *
 import requests
 import logging
-
-
 from base_logger import logger
 
 
