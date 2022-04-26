@@ -444,25 +444,16 @@ def insert_values(db_empty,
     """
     insert observation in sql db
     """
-    if db_empty:
-        if instance_exists('Job', a_dict["url"], 'url', type='job'):
-            competition_catalogue = update_db(a_dict, competition_catalogue)
-        else:
-            skill_catalogue, competition_catalogue, verification_catalogue = add_instances(a_dict,
-                                                                                           session,
-                                                                                           Job,
-                                                                                           Budget,
-                                                                                           skill_catalogue,
-                                                                                           competition_catalogue,
-                                                                                           verification_catalogue)
+    if instance_exists('Job', a_dict["url"], 'url', type='job'):
+        competition_catalogue = update_db(a_dict, competition_catalogue)
     else:
-        skill_catalogue, competition_catalogue, verification_catalogue, = add_instances(a_dict,
-                                                                                        session,
-                                                                                        Job,
-                                                                                        Budget,
-                                                                                        skill_catalogue,
-                                                                                        competition_catalogue,
-                                                                                        verification_catalogue)
+        skill_catalogue, competition_catalogue, verification_catalogue = add_instances(a_dict,
+                                                                                       session,
+                                                                                       Job,
+                                                                                       Budget,
+                                                                                       skill_catalogue,
+                                                                                       competition_catalogue,
+                                                                                       verification_catalogue)
     logger.info('added or updated 1 instance to the SQL database freelancer')
     return skill_catalogue, competition_catalogue, verification_catalogue
 
