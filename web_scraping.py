@@ -82,7 +82,7 @@ def modify_globals(page_start, page_stop, sql_username, sql_password, sql_host):
     file_path = 'globals.py'
     with open(file_path, 'w') as f:
         f.write(f"""MAIN_URL = 'https://www.freelancer.com'\nPAGE_START = {page_start}\nPAGE_STOP = {page_stop}\
-\nUSERNAME = \'{sql_username}\'\nPASSWORD = \'{sql_password}\'\nHOST = \'{sql_host}\'\nDB_NAME = 'freelancer'""")
+\nUSERNAME = \'{sql_username}\'\nPASSWORD = \'{sql_password}\'\nHOST = \'{sql_host}\'\nDB_NAME = 'ilan_shai'""")
 
 
 def test_valid_arguments(args):

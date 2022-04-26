@@ -23,18 +23,18 @@ from base_logger import logger
 pymysql.install_as_MySQLdb()
 
 
-def database_exists(database):
-    """check if database exists"""
+def database_empty(database):
+    """check if database not empy"""
     connection = pymysql.connect(host=HOST,
                                  user=USERNAME,
                                  password=PASSWORD,
                                  cursorclass=pymysql.cursors.DictCursor)
     cursor = connection.cursor()
-    cursor.execute("SHOW DATABASES")
+    cursor.execute(f"USE {database}")
+    cursor.execute("SHOW FULL TABLES")
     my_list = cursor.fetchall()
-    for a_dic in my_list:
-        if database in a_dic.values():
-            return True
+    if my_list == ():
+        return True
     return False
 
 
@@ -48,7 +48,7 @@ def instance_exists(table, inst, col='all', type='verification'):
                                  password=PASSWORD,
                                  cursorclass=pymysql.cursors.DictCursor)
     cursor = connection.cursor()
-    cursor.execute(f"USE freelancer")
+    cursor.execute(f"USE {DB_NAME}")
     cursor.execute(f"SELECT {col} from {table};")
     my_list = cursor.fetchall()
 
@@ -326,7 +326,7 @@ def create_tables(Base):
         CompetitionSet = relationship("CompetitionSet", back_populates="Job")
 
     class SkillSet(Base):
-        __tablename__ = 'Skillset'
+        __tablename__ = 'SkillSet'
 
         id = Column(Integer, nullable=False, primary_key=True, autoincrement=True)
         job_id = Column(Integer, ForeignKey('Job.id'))
@@ -433,7 +433,7 @@ def save_json(skill_catalogue, competition_catalogue, verification_catalogue):
     logger.info('saved catalogues in file catalogues.json')
 
 
-def insert_values(db_exist,
+def insert_values(db_empty,
                   a_dict,
                   session,
                   Job,
@@ -444,7 +444,7 @@ def insert_values(db_exist,
     """
     insert observation in sql db
     """
-    if db_exist:
+    if db_empty:
         if instance_exists('Job', a_dict["url"], 'url', type='job'):
             competition_catalogue = update_db(a_dict, competition_catalogue)
         else:
@@ -463,6 +463,7 @@ def insert_values(db_exist,
                                                                                         skill_catalogue,
                                                                                         competition_catalogue,
                                                                                         verification_catalogue)
+    logger.info('added or updated 1 instance to the SQL database freelancer')
     return skill_catalogue, competition_catalogue, verification_catalogue
 
 
@@ -471,21 +472,16 @@ def db_initialization(engine, Base):
     If the data base does not exist, create it and clean the json file of catalogues
     """
 
-    db_exist = database_exists(DB_NAME)
-    if not db_exist:
-        engine.execute(f"CREATE DATABASE {DB_NAME}")
-        engine.execute(f"USE {DB_NAME}")
-        Base.metadata.create_all(engine)
-        logger.info('Created SQL database freelancer')
-
+    db_empty = database_empty(DB_NAME)
+    engine.execute(f"USE {DB_NAME}")
+    Base.metadata.create_all(engine)
+    if db_empty:
         # clean catalogues.json
         path = str(pathlib.Path(__file__).parent.resolve())
         with open(path + '/catalogues.json', 'w') as fp:
             json.dump({}, fp)
             logger.info('Created file catalogues.json')
-    else:
-        engine.execute(f"USE {DB_NAME}")
-    return db_exist
+    return db_empty
 
 
 def enrich_api():
@@ -501,7 +497,7 @@ def enrich_api():
 def create_sql(dict_merged):
     """
     Given dict_merged, a list of dictionaries with the scraped data from freelancer.com,
-    the function creates or updates a sql database called 'freelancer'.
+    the function creates or updates a sql database .
 
     Each class is a table in the database.
 
@@ -523,14 +519,14 @@ def create_sql(dict_merged):
     Job, SkillSet, Skill, Budget, VerificationSet, Verification, CompetitionSet, Competition = create_tables(Base)
 
     # create db if does not exist, use the existing one otherwise
-    db_exist = db_initialization(engine, Base)
+    db_empty = db_initialization(engine, Base)
 
     # if the db exists, the catalogues too. We load them:
     skill_catalogue, competition_catalogue, verification_catalogue = get_catalogues()
 
     # insert values from dict_merged
     for a_dict in dict_merged:
-        skill_catalogue, competition_catalogue, verification_catalogue = insert_values(db_exist,
+        skill_catalogue, competition_catalogue, verification_catalogue = insert_values(db_empty,
                                                                                        a_dict,
                                                                                        session,
                                                                                        Job,
@@ -545,6 +541,6 @@ def create_sql(dict_merged):
     save_json(skill_catalogue, competition_catalogue, verification_catalogue)
 
     # enrich SKill and Budget with APIs
-    enrich_api()
+    #enrich_api()
 
     session.close()
